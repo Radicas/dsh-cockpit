@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前定版 **v11.0.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前定版 **v12.0.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 ## 设计原则（v5）
 
@@ -11,6 +11,15 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 交互（v12）
+
+- **待你确认 → 真跳转**：有 pendingInteraction 时 AGENT 状态行出现琥珀`跳转`按钮，
+  点击 smooth-scroll 到最近的确认卡（宿主真实锚点 `[data-approval-key]`），到达处金色光圈一闪
+- **`↺` 回到最新**：常亮小按钮，滚到历史深处时一键回到最新回合（锚点 `[data-turn-tail]`）
+- **悬停精确值**：USE/MIX 每行 title 显示逗号精确整数 + 占比；CTX 弧卡 title 显示
+  `182,400 / 1,048,576 tok · 17.39%`——显示层永远是约数，真相在悬停里
+- 实现走原生 DOM 锚点与 title 属性，不依赖宿主私有 hook，升级耐受
 
 ## 效果清单
 

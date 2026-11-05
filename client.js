@@ -72,6 +72,8 @@ window.__ModuleLoader__.load({
         run: '运行',
         standby: '待机',
         input: '待输入',
+        goto: '跳转',
+        latest: '回到最新',
         session: '会话',
         local: '舰桥时',
         vector: '航向',
@@ -136,6 +138,8 @@ window.__ModuleLoader__.load({
         run: 'RUN',
         standby: 'STBY',
         input: 'INPUT',
+        goto: 'GO',
+        latest: 'LATEST',
         session: 'SES',
         local: 'BRIDGE',
         vector: 'VECTOR',
@@ -313,6 +317,17 @@ window.__ModuleLoader__.load({
       '.dsh-br-ltcalls{flex:none;font-size:7.5px;color:#b3a5ff;font-variant-numeric:tabular-nums}',
       '.dsh-br-arc[data-live="run"] .dsh-br-arc-fill{animation:dsh-br-breathe 1.6s ease-in-out infinite}',
       '.dsh-br-arc-delta{font-size:7.5px;color:#8ce8b0;letter-spacing:.1em;font-variant-numeric:tabular-nums}',
+
+      /* interaction: real jump buttons + hover precision tooltips */
+      '.dsh-br-panel{pointer-events:auto}',
+      '.dsh-br-jump{flex:none;cursor:pointer;font:inherit;font-size:7.5px;letter-spacing:.16em;padding:2px 7px;border:1px solid rgba(255,196,107,.45);background:rgba(255,196,107,.08);color:#ffd79a;transition:background .18s ease,border-color .18s ease}',
+      '.dsh-br-jump:hover{background:rgba(255,196,107,.22);border-color:rgba(255,196,107,.9)}',
+      '.dsh-br-jump[data-k="latest"]{border-color:rgba(87,216,255,.32);background:rgba(87,216,255,.06);color:#9fe4ff}',
+      '.dsh-br-jump[data-k="latest"]:hover{background:rgba(87,216,255,.16);border-color:rgba(87,216,255,.7)}',
+      '.dsh-br-urow{cursor:help}',
+      '.dsh-br-arc{cursor:help}',
+      '[data-approval-key].dsh-br-flash,[data-turn-tail].dsh-br-flash{animation:dsh-br-flashring 1.6s ease}',
+      '@keyframes dsh-br-flashring{0%,55%{box-shadow:0 0 0 1px rgba(255,196,107,.75),0 0 22px rgba(255,196,107,.3)}100%{box-shadow:none}}',
       '.dsh-br-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:8px;letter-spacing:.3em;color:rgba(148,183,208,.4)}',
 
       /* arc gauge */
@@ -449,6 +464,21 @@ window.__ModuleLoader__.load({
       { style: { bottom: 6, left: 6 }, transform: 'scaleY(-1)' },
       { style: { bottom: 6, right: 6 }, transform: 'scale(-1, -1)' },
     ];
+
+    /** Scroll the newest DOM node matching `sel` into view. Real host anchors:
+     *  [data-turn-tail] (per turn), [data-approval-key] (confirm cards). */
+    function jumpTo(sel) {
+      try {
+        const list = document.querySelectorAll(sel);
+        if (list.length === 0) return;
+        const el = list[list.length - 1];
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('dsh-br-flash');
+        setTimeout(() => {
+          try { el.classList.remove('dsh-br-flash'); } catch (err) {}
+        }, 1700);
+      } catch (err) {}
+    }
 
     /** Compact token figure: 999, 12.4k, 3.1M. */
     function fmt(n) {
@@ -858,6 +888,8 @@ window.__ModuleLoader__.load({
                 stats == null ? '\u2014' : 'T' + stats.turns + ' \u00B7 S' + stats.steps,
               ),
               liveCalls > 0 ? h('span', { className: 'dsh-br-ltcalls' }, '\u25B8' + liveCalls) : null,
+              waiting ? h('button', { type: 'button', className: 'dsh-br-jump', onClick: () => jumpTo('[data-approval-key]') }, t('goto')) : null,
+              h('button', { type: 'button', className: 'dsh-br-jump', 'data-k': 'latest', title: t('latest'), onClick: () => jumpTo('[data-turn-tail]') }, '\u21BA'),
             ),
             h(
               'div',
@@ -1042,13 +1074,16 @@ window.__ModuleLoader__.load({
           const pct = projected != null && cap ? Math.min(100, (easedProj / cap) * 100) : null;
           const hot = pct != null && pct >= 85;
           const ARC = 131.9; // pi * r(42) half-circle length
+          const arcTip = projected == null || cap == null || cap <= 0
+            ? '\u2014'
+            : Number(projected).toLocaleString('en-US') + ' / ' + Number(cap).toLocaleString('en-US') + ' tok \u00B7 ' + Math.min(100, (projected / cap) * 100).toFixed(2) + '%';
           const ctxPanel = h(
             'div',
             { className: 'dsh-br-panel' },
             h('div', { className: 'dsh-br-panel-head' }, t('ctx'), h('b', null, cap ? fmt(cap) : '\u2014')),
             h(
               'div',
-              { className: 'dsh-br-arc', 'data-live': live },
+              { className: 'dsh-br-arc', 'data-live': live, title: arcTip },
               h(
                 'svg',
                 { viewBox: '0 0 104 66' },
@@ -1167,9 +1202,12 @@ window.__ModuleLoader__.load({
         function URow(props) {
           const ev = useEased(props.value);
           const g = useDelta(props.value);
+          const exact = Number.isFinite(props.value) ? props.value.toLocaleString('en-US') : '--';
+          const share = props.max > 0 && Number.isFinite(props.value) ? ((props.value / props.max) * 100).toFixed(1) + '%' : '';
+          const tip = props.name + ' ' + exact + ' tok' + (share ? ' · ' + share : '');
           return h(
             'div',
-            { className: 'dsh-br-urow' },
+            { className: 'dsh-br-urow', title: tip },
             h('i', { className: 'dsh-br-urow-key', style: { background: props.color } }),
             h('span', { className: 'dsh-br-urow-name' }, props.name),
             h(
