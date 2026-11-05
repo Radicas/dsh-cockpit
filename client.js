@@ -46,6 +46,22 @@ window.__ModuleLoader__.load({
     const AZ = '#57d8ff';
     const AZ_DIM = 'rgba(87,216,255,.30)';
     const AZ_FAINT = 'rgba(87,216,255,.14)';
+
+    /* Static starfield: one fixed, hand-written star table (never re-random,
+       so nothing pretends to measure). [x%, y%, bright]; two brightness tiers.
+       Each token is paren-balanced: rgba(...) closes before `transparent 100%)`. */
+    const STARS = [
+      [17, 8, 1], [42, 14, 0], [71, 6, 0], [88, 19, 1], [9, 27, 0], [63, 23, 0],
+      [34, 31, 1], [80, 34, 0], [25, 44, 0], [55, 49, 1], [5, 55, 0], [72, 57, 0],
+      [94, 52, 0], [40, 63, 0], [12, 71, 1], [60, 76, 0], [85, 73, 0], [28, 83, 0],
+      [48, 88, 1], [77, 90, 0], [6, 95, 0], [92, 86, 0],
+    ]
+      .map(function (p) {
+        return 'radial-gradient(' + (p[2] ? '1.6px 1.6px' : '1px 1px') + ' at ' +
+          p[0] + '% ' + p[1] + '%, rgba(223,242,255,' + (p[2] ? '.5' : '.26') +
+          '), transparent 100%)';
+      })
+      .join(',');
     const VIOLET = '#8b7cf6';
     const GREEN = '#4ade80';
     const AMBER = '#ffc46b';
@@ -236,6 +252,8 @@ window.__ModuleLoader__.load({
       /* --- frame (root decoration) ------------------------------------- */
       '.dsh-br-frame{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
       '.dsh-br-depth{position:absolute;inset:0;background:radial-gradient(58% 44% at 14% 6%,rgba(56,189,248,.055),transparent 70%),radial-gradient(50% 42% at 88% 94%,rgba(87,216,255,.05),transparent 70%)}',
+      '.dsh-br-stars{position:absolute;inset:0;background:' + STARS + ',radial-gradient(70% 50% at 50% 0%,rgba(56,130,246,.05),transparent 70%)}',
+      '.dsh-br-stars2{position:absolute;inset:0;background:radial-gradient(2px 2px at 24% 16%,rgba(223,242,255,.55),transparent 100%),radial-gradient(2px 2px at 68% 38%,rgba(159,228,255,.5),transparent 100%),radial-gradient(2px 2px at 13% 66%,rgba(223,242,255,.45),transparent 100%),radial-gradient(2px 2px at 90% 78%,rgba(159,228,255,.4),transparent 100%);animation:dsh-br-breathe 7s ease-in-out infinite}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
       '.dsh-br-edge[data-edge="top"]{top:6px}',
@@ -469,6 +487,25 @@ window.__ModuleLoader__.load({
       '.bOPqQW_anchor.bOPqQW_anchor{display:none}',
     ].join('\n');
 
+    // Build-time guard: an unbalanced paren/brace in any rule silently breaks
+    // that declaration and can cascade to following rules. Fail loudly (in dev)
+    // rather than ship a wrecked stylesheet.
+    if (typeof window !== 'undefined' && window.location && /(^|\.)localhost|127\.0\.0\.1/.test(window.location.hostname)) {
+      let bal = 0;
+      let brace = 0;
+      for (let i = 0; i < CSS.length; i++) {
+        const ch = CSS.charAt(i);
+        if (ch === '(') bal++;
+        else if (ch === ')') { bal--; if (bal < 0) break; }
+        else if (ch === '{') brace++;
+        else if (ch === '}') brace--;
+      }
+      if (bal !== 0 || brace !== 0) {
+        // eslint-disable-next-line no-console
+        console.error('[dsh-cockpit] CSS balance error — paren=' + bal + ' brace=' + brace);
+      }
+    }
+
     const TIME = new Intl.DateTimeFormat('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
@@ -665,6 +702,8 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'dsh-br-frame', 'aria-hidden': 'true' },
               h('i', { className: 'dsh-br-depth' }),
+              h('i', { className: 'dsh-br-stars' }),
+              h('i', { className: 'dsh-br-stars2' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'top' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'bottom' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'left' }),
