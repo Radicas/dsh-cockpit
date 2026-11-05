@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Bridge HUD">
+  <rect width="64" height="64" rx="12" fill="#060d18"/>
+  <path d="M32 8 52 20v24L32 56 12 44V20Z" fill="none" stroke="#57d8ff" stroke-width="2" stroke-linejoin="round" opacity=".9"/>
+  <path d="M32 16 45 23.6v16.8L32 48 19 40.4V23.6Z" fill="none" stroke="#9fe8ff" stroke-width="1" stroke-linejoin="round" opacity=".55"/>
+  <circle cx="32" cy="32" r="6.5" fill="none" stroke="#57d8ff" stroke-width="1.6" opacity=".85"/>
+  <circle cx="32" cy="32" r="2" fill="#dff2ff"/>
+  <path d="M32 21v4M32 39v4M21 32h4M39 32h4" stroke="#57d8ff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>
+  <path d="M7 11h9M7 16h5M48 48h9M52 53h5" stroke="#38bdf8" stroke-width="1.8" stroke-linecap="round" opacity=".7"/>
+</svg>
