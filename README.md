@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.9.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.10.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,25 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 控制台键（v16.10）
+
+发送键与语音键重做成同一套几何：**八角形**，与面板的切角语言一致，只靠通道色区分。
+
+| 键 | 形状 | 通道色 | 真实状态 |
+|---|---|---|---|
+| 发送 `.uV2eYG_primary` | 36px 八角 | 青 | `:disabled` = 草稿为空（未上膛） |
+| 语音 `.ddpbLW_trigger` | 32px 八角 | 紫 | `:disabled` = 锁定；`[aria-haspopup="dialog"]` = **未配置**（点了开设置） |
+
+**每个视觉状态都对应宿主真状态**：未配置时转琥珀、录制中呼吸——后者直接挂语音插件自己的
+`data-voice-activity="recording"` 属性（用 `:has()` 选择），不是猜的。
+
+### 一个必须修的坑
+
+`clip-path` 会**裁掉 `box-shadow` 的外发光**——外阴影画在形状外面，正好被剪。
+所有外发光改用 `filter: drop-shadow()`，它按裁剪后的形状绘制；`box-shadow` 只保留 `inset`。
+
+语音键此前完全没有主题化（宿主原样），这次一并纳入。
 
 ## 层级收敛（v16.9）
 

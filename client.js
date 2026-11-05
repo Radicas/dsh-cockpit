@@ -702,10 +702,56 @@ window.__ModuleLoader__.load({
       '.uV2eYG_card.uV2eYG_card:before{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;opacity:.6;background:linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/1px 9px no-repeat}',
       '.uV2eYG_input.uV2eYG_input{caret-color:' + AZ + '}',
       '.uV2eYG_placeholder.uV2eYG_placeholder{color:#7e97ae}',
-      '.uV2eYG_primary.uV2eYG_primary{width:36px;height:36px;border-radius:5px;clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);background:linear-gradient(135deg,#7ce4ff,#2f9fd8);color:#04121e;box-shadow:0 0 16px rgba(87,216,255,.45),inset 0 1px 0 rgba(255,255,255,.35);transform:translateY(-2px);transition:box-shadow .15s,filter .15s}',
-      '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled){background:linear-gradient(135deg,#9aecff,#41b4ea);box-shadow:0 0 24px rgba(87,216,255,.7),inset 0 1px 0 rgba(255,255,255,.45)}',
-      '.uV2eYG_primary.uV2eYG_primary:active:not(:disabled){filter:brightness(.88)}',
-      '.uV2eYG_primary.uV2eYG_primary:disabled{background:linear-gradient(135deg,rgba(87,216,255,.20),rgba(47,159,216,.14));color:rgba(4,18,30,.55);box-shadow:none;opacity:.65}',
+      /* Console keys: the send and voice buttons share one geometry (octagon,
+         same bevel language as the panels) and differ only in channel colour.
+         Every visual state here is a REAL host state — `:disabled` is exactly
+         "draft empty", `[aria-haspopup="dialog"]` is exactly "voice not
+         configured", and the recording pulse hangs off the voice plugin's own
+         data-voice-activity attribute. Nothing is animated on a guess. */
+      '.uV2eYG_primary.uV2eYG_primary{width:36px;height:36px;padding:0;border-radius:0;' +
+        'clip-path:polygon(26% 0,74% 0,100% 26%,100% 74%,74% 100%,26% 100%,0 74%,0 26%);' +
+        'background:linear-gradient(155deg,#a8f0ff,#4fc6f0 46%,#1f86bd);color:#03121d;' +
+        'box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 12px rgba(255,255,255,.22);' +
+        'filter:drop-shadow(0 0 8px rgba(87,216,255,.6));transform:translateY(-2px);' +
+        'transition:filter .16s ease,transform .1s ease}',
+      '.uV2eYG_primary.uV2eYG_primary svg{width:17px;height:17px}',
+      '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled){' +
+        'filter:brightness(1.1) saturate(1.05) drop-shadow(0 0 14px rgba(87,216,255,.95));' +
+        'box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 0 14px rgba(255,255,255,.3)}',
+      '.uV2eYG_primary.uV2eYG_primary:active:not(:disabled){transform:translateY(-1px) scale(.93);filter:brightness(.92) drop-shadow(0 0 6px rgba(87,216,255,.5))}',
+      '.uV2eYG_primary.uV2eYG_primary:focus-visible{outline:none;' +
+        'filter:brightness(1.15) drop-shadow(0 0 0 rgba(0,0,0,0)) drop-shadow(0 0 12px rgba(87,216,255,1))}',
+      /* empty draft: a designed "unarmed" key, not a faded copy of the armed one */
+      '.uV2eYG_primary.uV2eYG_primary:disabled{opacity:1;transform:translateY(-2px);filter:none;' +
+        'background:linear-gradient(155deg,rgba(87,216,255,.14),rgba(31,134,189,.08));' +
+        'color:rgba(148,183,208,.5);box-shadow:inset 0 0 0 1px rgba(87,216,255,.22)}',
+      /* voice key — violet channel */
+      '.ddpbLW_trigger.ddpbLW_trigger{width:32px;height:32px;padding:0;border-radius:0;' +
+        'clip-path:polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%);' +
+        'background:linear-gradient(155deg,rgba(179,165,255,.26),rgba(87,216,255,.10));' +
+        'color:#cfc6ff;box-shadow:inset 0 0 0 1px rgba(139,124,246,.55);' +
+        'filter:drop-shadow(0 0 6px rgba(139,124,246,.4));' +
+        'transition:filter .16s ease,box-shadow .16s ease,background .16s ease,color .16s ease,transform .1s ease}',
+      '.ddpbLW_trigger.ddpbLW_trigger svg{width:17px;height:17px}',
+      '.ddpbLW_trigger.ddpbLW_trigger:hover:not(:disabled){' +
+        'background:linear-gradient(155deg,rgba(179,165,255,.42),rgba(87,216,255,.2));color:#e8e2ff;' +
+        'box-shadow:inset 0 0 0 1px rgba(139,124,246,.9);' +
+        'filter:brightness(1.12) drop-shadow(0 0 12px rgba(139,124,246,.8))}',
+      '.ddpbLW_trigger.ddpbLW_trigger:active:not(:disabled){transform:scale(.93)}',
+      '.ddpbLW_trigger.ddpbLW_trigger:focus-visible{outline:none;' +
+        'box-shadow:inset 0 0 0 1px rgba(139,124,246,.95);' +
+        'filter:drop-shadow(0 0 10px rgba(139,124,246,1))}',
+      '.ddpbLW_trigger.ddpbLW_trigger:disabled{background:rgba(139,124,246,.06);filter:none;' +
+        'color:rgba(148,183,208,.45);box-shadow:inset 0 0 0 1px rgba(139,124,246,.22)}',
+      /* opens a setup dialog instead of recording = not configured yet */
+      '.ddpbLW_trigger.ddpbLW_trigger[aria-haspopup="dialog"]{color:#ffd79a;' +
+        'box-shadow:inset 0 0 0 1px rgba(255,196,107,.6);' +
+        'filter:drop-shadow(0 0 8px rgba(255,196,107,.5))}',
+      /* real recording state, straight off the voice plugin's own attribute */
+      '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_trigger{' +
+        'color:#fff;box-shadow:inset 0 0 0 1px rgba(255,196,107,.95);' +
+        'filter:drop-shadow(0 0 14px rgba(255,196,107,.9));' +
+        'animation:dsh-br-pulse 1.05s ease-in-out infinite}',
       '.uV2eYG_add.uV2eYG_add{border-radius:5px;background:rgba(87,216,255,.07);border:1px solid rgba(87,216,255,.30);color:' + AZ + ';box-shadow:inset 0 0 10px rgba(56,189,248,.06)}',
       '.uV2eYG_add.uV2eYG_add:hover:not(:disabled){background:rgba(87,216,255,.16)}',
       '.uV2eYG_select.uV2eYG_select{color:#a5c0d6;border-radius:4px;border:1px solid transparent}',
