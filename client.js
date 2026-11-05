@@ -46,6 +46,11 @@ window.__ModuleLoader__.load({
     const AZ = '#57d8ff';
     const AZ_DIM = 'rgba(87,216,255,.30)';
     const AZ_FAINT = 'rgba(87,216,255,.14)';
+    const VIOLET = '#8b7cf6';
+    const GREEN = '#4ade80';
+    const AMBER = '#ffc46b';
+    const ICE = '#dff2ff';
+    const STEEL = 'rgba(148,183,208,.72)';
 
     /* Near-star table: hand-written fixed coords [x%, y%, bright]. Baked into
        the sky bitmap once at load (see bakeSkyURL) — a texture, never a
