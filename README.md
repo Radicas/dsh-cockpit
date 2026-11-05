@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前定版 **v12.0.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前定版 **v13.0.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 ## 设计原则（v5）
 
@@ -11,6 +11,16 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 单一心跳（v13）
+
+v12 前全插件挂着 **~12 个 setInterval**：每个 URow 一个 70ms 缓动循环（7个）、
+FLOW 200ms 采样、各组件 1000ms 时钟。v13 收敛为**工厂级单例心跳**：一个 70ms
+interval + `subscribeBeat` 订阅分发，首个订阅者启动、最后一个离开自动停止。
+- useClock：由心跳派生，仅跨秒才 re-render
+- useEased：全部挂共享心跳（React 18 自动批处理，一次心跳合并所有数字滚动）
+- FLOW：采样门槛 ≥195ms 保持 32s 窗口；think/跑/写 三段计时改用**真实 dt 累计**
+  （此前假设整 200ms，现在毫秒实测）
 
 ## 交互（v12）
 

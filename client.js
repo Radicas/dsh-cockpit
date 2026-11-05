@@ -465,6 +465,30 @@ window.__ModuleLoader__.load({
       { style: { bottom: 6, right: 6 }, transform: 'scale(-1, -1)' },
     ];
 
+    /** Shared heartbeat: ONE 70ms interval for the whole plugin, fanned out
+     *  to subscribers. Starts lazily on first subscriber, stops when the last
+     *  leaves. Replaces per-component 70/200/1000ms timers (v13). */
+    let beatTimer = null;
+    const beatListeners = new Set();
+    function subscribeBeat(fn) {
+      beatListeners.add(fn);
+      if (beatTimer == null) {
+        beatTimer = setInterval(() => {
+          const now = Date.now();
+          for (const f of Array.from(beatListeners)) {
+            try { f(now); } catch (err) {}
+          }
+        }, 70);
+      }
+      return () => {
+        beatListeners.delete(fn);
+        if (beatListeners.size === 0 && beatTimer != null) {
+          clearInterval(beatTimer);
+          beatTimer = null;
+        }
+      };
+    }
+
     /** Scroll the newest DOM node matching `sel` into view. Real host anchors:
      *  [data-turn-tail] (per turn), [data-approval-key] (confirm cards). */
     function jumpTo(sel) {
@@ -544,10 +568,13 @@ window.__ModuleLoader__.load({
 
         function useClock() {
           const [now, setNow] = useState(() => Date.now());
-          useEffect(() => {
-            const timer = setInterval(() => setNow(Date.now()), 1000);
-            return () => clearInterval(timer);
-          }, []);
+          useEffect(
+            () =>
+              subscribeBeat((t) => {
+                setNow((prev) => (Math.floor(t / 1000) !== Math.floor(prev / 1000) ? t : prev));
+              }),
+            [],
+          );
           return now;
         }
 
@@ -742,7 +769,11 @@ window.__ModuleLoader__.load({
             flashText: '',
           });
           useEffect(() => {
-            const timer = setInterval(() => {
+            let lastSample = 0;
+            return subscribeBeat((beatNow) => {
+              const dt = lastSample === 0 ? 200 : beatNow - lastSample;
+              if (lastSample !== 0 && dt < 195) return; // keep the ~200ms series cadence (160 samples = 32s)
+              lastSample = beatNow;
               const s = sigRef.current;
               const m = metaRef.current;
               m.tick += 1;
@@ -789,9 +820,9 @@ window.__ModuleLoader__.load({
               if (s.running) {
                 m.turnChars += chDelta;
                 m.turnRea += reaDelta;
-                if (phase === 'think') m.thinkMs += 200;
-                else if (phase === 'tool') m.toolMs += 200;
-                else if (phase === 'out') m.outMs += 200;
+                if (phase === 'think') m.thinkMs += dt;
+                else if (phase === 'tool') m.toolMs += dt;
+                else if (phase === 'out') m.outMs += dt;
                 if (m.firstTextT == null && chDelta > 0) m.firstTextT = Date.now();
               }
               if (m.lastTurns === 0 && s.turns > 0) m.lastTurns = s.turns;
@@ -809,8 +840,7 @@ window.__ModuleLoader__.load({
                 next.push({ p: phase, f: flash ? 1 : 0, d: chDelta, r: reaDelta });
                 return next;
               });
-            }, 200);
-            return () => clearInterval(timer);
+            });
           }, []);
           const curPhase = pulse.length > 0 ? pulse[pulse.length - 1].p : 'idle';
           const meta = metaRef.current;
@@ -1171,18 +1201,19 @@ window.__ModuleLoader__.load({
           const [disp, setDisp] = useState(Number.isFinite(v) ? v : 0);
           const st = useRef({ cur: 0, tgt: Number.isFinite(v) ? v : 0 });
           st.current.tgt = Number.isFinite(v) ? v : 0;
-          useEffect(() => {
-            const timer = setInterval(() => {
-              setDisp((prev) => {
-                const tgt = st.current.tgt;
-                const gap = tgt - prev;
-                const eps = Math.max(1, Math.abs(tgt)) * 0.008;
-                if (Math.abs(gap) <= eps) return tgt;
-                return prev + gap * 0.3;
-              });
-            }, 70);
-            return () => clearInterval(timer);
-          }, []);
+          useEffect(
+            () =>
+              subscribeBeat(() => {
+                setDisp((prev) => {
+                  const tgt = st.current.tgt;
+                  const gap = tgt - prev;
+                  const eps = Math.max(1, Math.abs(tgt)) * 0.008;
+                  if (Math.abs(gap) <= eps) return tgt;
+                  return prev + gap * 0.3;
+                });
+              }),
+            [],
+          );
           return disp;
         }
 
