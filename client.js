@@ -74,6 +74,11 @@ window.__ModuleLoader__.load({
         input: '待输入',
         goto: '跳转',
         latest: '回到最新',
+        fault: '故障',
+        halted: '已停止',
+        failN: '失败',
+        retryWait: '重试排队',
+        retryGo: '重试中',
         session: '会话',
         local: '舰桥时',
         vector: '航向',
@@ -113,6 +118,7 @@ window.__ModuleLoader__.load({
         out: '生成中',
         tool: '工具执行',
         ask: '等待确认',
+        fail: '故障',
         waitYou: '待你确认',
         exec: '执行',
         gen: '生成中',
@@ -140,6 +146,11 @@ window.__ModuleLoader__.load({
         input: 'INPUT',
         goto: 'GO',
         latest: 'LATEST',
+        fault: 'FAULT',
+        halted: 'STOPPED',
+        failN: 'FAIL',
+        retryWait: 'RETRY Q',
+        retryGo: 'RETRYING',
         session: 'SES',
         local: 'BRIDGE',
         vector: 'VECTOR',
@@ -179,6 +190,7 @@ window.__ModuleLoader__.load({
         out: 'GENERATING',
         tool: 'TOOLS',
         ask: 'AWAITING',
+        fail: 'FAULT',
         waitYou: 'NEEDS YOU',
         exec: 'EXEC',
         gen: 'GENERATING',
@@ -264,6 +276,11 @@ window.__ModuleLoader__.load({
       '.dsh-br-live-led{flex:none;width:8px;height:8px;border-radius:50%;background:#5b7086;box-shadow:0 0 8px rgba(91,112,134,.8)}',
       '.dsh-br-live-led[data-live="run"]{background:' + GREEN + ';box-shadow:0 0 10px rgba(74,222,128,.95);animation:dsh-br-pulse 1.2s ease-in-out infinite}',
       '.dsh-br-live-led[data-live="input"]{background:' + AMBER + ';box-shadow:0 0 10px rgba(255,196,107,.95);animation:dsh-br-pulse .8s ease-in-out infinite}',
+      '.dsh-br-live-led[data-live="fault"],.dsh-br-live-led[data-live="halted"]{background:#ff6b6b;box-shadow:0 0 10px rgba(255,107,107,.95);animation:dsh-br-pulse .7s ease-in-out infinite}',
+      '.dsh-br-live-state[data-live="fault"],.dsh-br-live-state[data-live="halted"]{color:#ff9d9d}',
+      '.dsh-br-failrow{color:#ff9d9d;cursor:help}',
+      '.dsh-br-failrow b{color:#ffbaba;font-weight:600;font-variant-numeric:tabular-nums}',
+      '.dsh-br-jump[data-k="latest"][data-unread="true"]{animation:dsh-br-pulse .9s ease-in-out infinite;border-color:rgba(87,216,255,.9);background:rgba(87,216,255,.22);color:#dff2ff}',
       '.dsh-br-live-state{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:' + STEEL + '}',
       '.dsh-br-live-state[data-live="run"]{color:#8ce8b0}',
       '.dsh-br-live-state[data-live="input"]{color:#ffd79a}',
@@ -298,6 +315,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-flow-now[data-p="ask"]{color:#ffd79a}',
       '.dsh-br-flow-now[data-p="type"],.dsh-br-flow-now[data-p="sub"]{color:#cfe9ff}',
       '.dsh-br-flow-now[data-p="idle"]{color:rgba(148,183,208,.5)}',
+      '.dsh-br-flow-now[data-p="fail"]{color:#ff9d9d}',
       '.dsh-br-strip-wrap{position:relative;flex:1 1 auto;min-height:44px;display:flex}',
       '.dsh-br-strip{width:100%;height:100%;display:block}',
       '.dsh-br-strip .dsh-br-strip-head{animation:dsh-br-pulse 1s ease-in-out infinite}',
@@ -702,8 +720,6 @@ window.__ModuleLoader__.load({
               : undefined;
           const waiting = status != null && status.pendingInteraction != null;
           const running = status != null && status.running === true;
-          const live = waiting ? 'input' : running ? 'run' : 'standby';
-
           const totalTokens =
             usage == null
               ? 0
@@ -735,6 +751,46 @@ window.__ModuleLoader__.load({
             return txt.length > 14 ? txt.slice(0, 14) + '\u2026' : txt;
           }, '');
 
+          // Failure ledger: scan the last 40 loaded nodes for real red signals —
+          // turn-error notices, model-retry lifecycle, failed tool results.
+          const errSig = pick(props.useChat, (s) => {
+            if (s == null || s.legacy == null || s.order == null || s.legacy.nodes == null) return '0|0|||';
+            const ord = s.order;
+            const store = s.legacy.nodes;
+            const from = Math.max(0, ord.length - 40);
+            let turnErr = 0;
+            let toolErr = 0;
+            let retry = '';
+            let code = '';
+            let msg = '';
+            for (let i = ord.length - 1; i >= from; i--) {
+              let raw = null;
+              try { raw = store.get(ord[i]); } catch (err) {}
+              const d = raw == null ? null : raw.kind != null ? raw : raw.data != null ? raw.data : null;
+              if (d == null || typeof d.kind !== 'string') continue;
+              if (d.kind === 'turn-error') {
+                if (turnErr === 0) {
+                  code = String(d.code == null ? '' : d.code);
+                  msg = String(d.message == null ? '' : d.message).slice(0, 60);
+                }
+                turnErr += 1;
+              } else if (d.kind === 'tool-result' && d.isError === true) toolErr += 1;
+              else if (d.kind === 'model-retry' && retry === '') retry = String(d.retryState == null ? '' : d.retryState);
+            }
+            return turnErr + '|' + toolErr + '|' + retry + '|' + code + '|' + msg;
+          }, '0|0|||');
+          const errParts = String(errSig).split('|');
+          const turnErrN = Number(errParts[0]) || 0;
+          const toolErrN = Number(errParts[1]) || 0;
+          const retryK = errParts[2] == null ? '' : errParts[2];
+          const errCode = errParts[3] == null ? '' : errParts[3];
+          const errMsg = errParts[4] == null ? '' : errParts[4];
+          const halt = turnErrN > 0 && errCode === 'INTERRUPTED';
+          const fault = turnErrN > 0 && !halt;
+          const errN = turnErrN + toolErrN;
+          const unread = status != null && status.completionUnread === true;
+          const live = waiting ? 'input' : running ? 'run' : halt ? 'halted' : fault ? 'fault' : 'standby';
+
           const sigRef = useRef(null);
           sigRef.current = {
             draftLen: draftLen,
@@ -747,6 +803,7 @@ window.__ModuleLoader__.load({
             turns: stats == null ? 0 : stats.turns,
             sessionId: sessionId,
             promptNow: promptNow,
+            errN: errN,
           };
           const [pulse, setPulse] = useState([]);
           const metaRef = useRef({
@@ -763,6 +820,7 @@ window.__ModuleLoader__.load({
             toolMs: 0,
             outMs: 0,
             firstTextT: null,
+            prevErr: 0,
             tick: 0,
             flashTick: null,
             flashT0: 0,
@@ -791,6 +849,7 @@ window.__ModuleLoader__.load({
                 m.toolMs = 0;
                 m.outMs = 0;
                 m.firstTextT = null;
+                m.prevErr = 0;
                 m.flashTick = null;
                 setPulse([]);
                 return;
@@ -804,6 +863,8 @@ window.__ModuleLoader__.load({
               else if (s.running) phase = s.liveCalls > 0 ? 'tool' : chDelta > 0 ? 'out' : 'think';
               if (phase === 'idle' && s.subFlight) phase = 'sub';
               else if (phase === 'idle' && s.draftLen > 0) phase = 'type';
+              if (s.running && s.errN > m.prevErr) phase = 'fail';
+              m.prevErr = s.errN;
               if (s.running && !m.wasRun) {
                 m.wasRun = true;
                 m.runStart = Date.now();
@@ -821,7 +882,7 @@ window.__ModuleLoader__.load({
                 m.turnChars += chDelta;
                 m.turnRea += reaDelta;
                 if (phase === 'think') m.thinkMs += dt;
-                else if (phase === 'tool') m.toolMs += dt;
+                else if (phase === 'tool' || phase === 'fail') m.toolMs += dt;
                 else if (phase === 'out') m.outMs += dt;
                 if (m.firstTextT == null && chDelta > 0) m.firstTextT = Date.now();
               }
@@ -903,6 +964,24 @@ window.__ModuleLoader__.load({
             ),
           ) : null;
 
+          const failRow = errN > 0 || retryK !== '' ? h(
+            'div',
+            { className: 'dsh-br-srow dsh-br-failrow', title: errMsg === '' ? t('failN') + ' \u00D7' + errN : errMsg },
+            h(
+              'span',
+              null,
+              t('failN'),
+              ' ',
+              h('b', null, '\u00D7' + errN),
+              errCode !== '' ? ' \u00B7 ' + errCode : '',
+              retryK === 'scheduled'
+                ? ' \u00B7 ' + t('retryWait')
+                : retryK === 'started'
+                  ? ' \u00B7 ' + t('retryGo')
+                  : '',
+            ),
+          ) : null;
+
           const agentPanel = h(
             'div',
             { className: 'dsh-br-panel' },
@@ -919,8 +998,9 @@ window.__ModuleLoader__.load({
               ),
               liveCalls > 0 ? h('span', { className: 'dsh-br-ltcalls' }, '\u25B8' + liveCalls) : null,
               waiting ? h('button', { type: 'button', className: 'dsh-br-jump', onClick: () => jumpTo('[data-approval-key]') }, t('goto')) : null,
-              h('button', { type: 'button', className: 'dsh-br-jump', 'data-k': 'latest', title: t('latest'), onClick: () => jumpTo('[data-turn-tail]') }, '\u21BA'),
+              h('button', { type: 'button', className: 'dsh-br-jump', 'data-k': 'latest', 'data-unread': unread ? 'true' : 'false', title: t('latest'), onClick: () => jumpTo('[data-turn-tail]') }, '\u21BA'),
             ),
+            failRow,
             h(
               'div',
               { className: 'dsh-br-split' },
@@ -967,8 +1047,9 @@ window.__ModuleLoader__.load({
             out: GREEN,
             tool: VIOLET,
             ask: AMBER,
+            fail: '#ff6b6b',
           };
-          const BALL_POS = { idle: 50, type: 12, sub: 34, think: 66, tool: 78, out: 90, ask: 18 };
+          const BALL_POS = { idle: 50, type: 12, sub: 34, think: 66, tool: 78, out: 90, ask: 18, fail: 78 };
           const youLit = curPhase === 'type' || curPhase === 'sub' || curPhase === 'ask';
           const meLit = curPhase === 'think' || curPhase === 'out' || curPhase === 'tool';
           let strip = null;

@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前定版 **v13.0.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前定版 **v14.0.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 ## 设计原则（v5）
 
@@ -11,6 +11,22 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 红色真信号（v14）
+
+系统出事时界面不再静默。信号全部取自宿主账本的**权威记录**（读类型确认）：
+
+- `turn-error` 节点：回合级终态错误，含 `message`（净化后错误文本）与 `code`
+  （如 `INTERRUPTED`=DSH 停止、`ACCOUNT_SIGNED_OUT`=登出取消）
+- `model-retry` 节点：`retryState: scheduled|started|cancelled`——失败步的重试生命周期
+- `tool-result.isError`：单次工具调用失败
+
+表现：
+- **AGENT 状态灯**：有未恢复的 turn-error 时转红呼吸，文案 `故障`/`已停止`
+- **AGENT 故障行**：`失败 ×N · CODE · 重试排队/重试中`，悬停 title 显示错误 message
+  （扫描最近 40 个已加载节点，只数真实的）
+- **FLOW**：错误落账那一刻相位转红一格（球到 78 位红闪），flow-now 显 `故障`
+- **`↺` 未读脉冲**：`SessionStatus.completionUnread` 为真（后台跑完且没看过）时青色呼吸催看
 
 ## 单一心跳（v13）
 
