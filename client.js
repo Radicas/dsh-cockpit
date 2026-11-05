@@ -88,9 +88,9 @@ window.__ModuleLoader__.load({
     const FAR = skyField(70, 0x5f3a91, '1px', 0.1, 0.22, 0.55);
     const MID = skyField(34, 0x2b7e14, '1.6px', 0.26, 0.45, 0.6);
     /* Nebulae riding the galactic band + a soft vignette for depth. */
-    const NEB = 'radial-gradient(38% 26% at 22% 24%,rgba(56,130,246,.06),transparent 70%),' +
-      'radial-gradient(30% 22% at 68% 62%,rgba(87,216,255,.05),transparent 70%),' +
-      'radial-gradient(46% 30% at 44% 40%,rgba(120,160,255,.035),transparent 72%),' +
+    const NEB = 'radial-gradient(38% 26% at 22% 24%,rgba(56,130,246,.09),transparent 70%),' +
+      'radial-gradient(30% 22% at 68% 62%,rgba(87,216,255,.075),transparent 70%),' +
+      'radial-gradient(46% 30% at 44% 40%,rgba(120,160,255,.055),transparent 72%),' +
       'radial-gradient(120% 90% at 50% 50%,transparent 60%,rgba(2,4,8,.5) 100%)';
     const VIOLET = '#8b7cf6';
     const GREEN = '#4ade80';
@@ -281,13 +281,13 @@ window.__ModuleLoader__.load({
 
       /* --- frame (root decoration) ------------------------------------- */
       '.dsh-br-frame{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
-      '.dsh-br-depth{position:absolute;inset:0;background:radial-gradient(58% 44% at 14% 6%,rgba(56,189,248,.055),transparent 70%),radial-gradient(50% 42% at 88% 94%,rgba(87,216,255,.05),transparent 70%)}',
-      '.dsh-br-stars{position:absolute;inset:0;background:' + STARS + '}',
-      '.dsh-br-sky{position:absolute;inset:-95px;will-change:transform;transition:transform 0.5s linear}',
-      '.dsh-br-sky[data-l="neb"]{background:' + NEB + '}',
-      '.dsh-br-sky[data-l="far"]{background:' + FAR + '}',
-      '.dsh-br-sky[data-l="mid"]{background:' + MID + '}',
-      '.dsh-br-stars2{position:absolute;inset:0;background:radial-gradient(2.6px 2.6px at 24% 16%,rgba(223,242,255,.85) 30%,transparent 100%),radial-gradient(2.6px 2.6px at 68% 38%,rgba(159,228,255,.8) 30%,transparent 100%),radial-gradient(2.6px 2.6px at 13% 66%,rgba(223,242,255,.75) 30%,transparent 100%),radial-gradient(2.6px 2.6px at 90% 78%,rgba(159,228,255,.7) 30%,transparent 100%),radial-gradient(9px 9px at 24% 16%,rgba(159,228,255,.22) 20%,transparent 100%),radial-gradient(9px 9px at 68% 38%,rgba(159,228,255,.2) 20%,transparent 100%),radial-gradient(9px 9px at 13% 66%,rgba(223,242,255,.18) 20%,transparent 100%),radial-gradient(9px 9px at 90% 78%,rgba(223,242,255,.16) 20%,transparent 100%);animation:dsh-br-breathe 7s ease-in-out infinite}',
+      '.dsh-br-depth{position:absolute;inset:0;background:radial-gradient(58% 44% at 14% 6%,rgba(56,189,248,.022),transparent 70%),radial-gradient(50% 42% at 88% 94%,rgba(87,216,255,.02),transparent 70%)}',
+      /* The conversation root IS the sky: layered starfields painted into its
+         own background with fixed attachment — text and bubbles always render
+         above their own background (no stacking gamble), the view outside the
+         window stays put while the cabin scrolls. */
+      '.wSkVaW_root.wSkVaW_root{background:' + NEB + ',' + FAR + ',' + MID + ',' + STARS + ',linear-gradient(0deg,#050b16,#03060c);background-attachment:fixed}',
+      '.wSkVaW_root[data-phase=active] .wSkVaW_composerSeat.wSkVaW_composerSeat{background:linear-gradient(180deg,rgba(4,8,15,0) 0px,rgba(4,8,15,.82) 44px)}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
       '.dsh-br-edge[data-edge="top"]{top:6px}',
@@ -496,7 +496,7 @@ window.__ModuleLoader__.load({
       /* host restyle — pinned to this DSH build's CSS-module hashes;       */
       /* doubled class raises specificity over the host sheet.              */
       /* ================================================================== */
-      '.uV2eYG_card.uV2eYG_card{--dsw-alias-label-primary:#e6f4ff;--dsw-alias-label-secondary:#a5c0d6;--dsw-alias-label-tertiary:#8fa9c2;--dsw-alias-label-caption:#7e97ae;border-radius:8px;border:1px solid rgba(87,216,255,.30);background:linear-gradient(180deg,rgba(10,21,36,.94),rgba(6,12,22,.97));box-shadow:0 12px 40px rgba(0,0,0,.45),0 0 26px rgba(56,189,248,.08),inset 0 1px 0 rgba(140,216,255,.10);transition:border-color .18s,box-shadow .18s}',
+      '.uV2eYG_card.uV2eYG_card{--dsw-alias-label-primary:#e6f4ff;--dsw-alias-label-secondary:#a5c0d6;--dsw-alias-label-tertiary:#8fa9c2;--dsw-alias-label-caption:#7e97ae;border-radius:8px;border:1px solid rgba(87,216,255,.30);background:linear-gradient(180deg,rgba(10,21,36,.82),rgba(6,12,22,.88));backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);box-shadow:0 12px 40px rgba(0,0,0,.45),0 0 26px rgba(56,189,248,.08),inset 0 1px 0 rgba(140,216,255,.10);transition:border-color .18s,box-shadow .18s}',
       '.uV2eYG_card.uV2eYG_card:focus-within{border-color:rgba(87,216,255,.65);box-shadow:0 12px 44px rgba(0,0,0,.5),0 0 34px rgba(56,189,248,.16),inset 0 1px 0 rgba(140,216,255,.14)}',
       '.uV2eYG_card.uV2eYG_card:before{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;opacity:.6;background:linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/1px 9px no-repeat}',
       '.uV2eYG_input.uV2eYG_input{caret-color:' + AZ + '}',
@@ -512,8 +512,8 @@ window.__ModuleLoader__.load({
       '.uV2eYG_pending.uV2eYG_pending{background:' + AZ + '}',
       '.uV2eYG_dock.uV2eYG_dock{flex-wrap:wrap;row-gap:6px}',
       '.uV2eYG_retry.uV2eYG_retry{border-radius:4px;border-color:rgba(87,216,255,.4);color:#a5c0d6}',
-      '.Sixlwa_bubble.Sixlwa_bubble{border-radius:8px 8px 8px 2px;border:1px solid rgba(87,216,255,.16);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 93%,rgba(87,216,255,.10)),var(--dsw-specific-bubble));box-shadow:0 2px 12px rgba(0,0,0,.16)}',
-      '.Sixlwa_userStack .Sixlwa_bubble{border-radius:8px 8px 2px 8px;border-color:rgba(87,216,255,.42);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 78%,rgba(87,216,255,.26)),color-mix(in srgb,var(--dsw-specific-bubble) 88%,rgba(87,216,255,.14)));box-shadow:0 2px 14px rgba(2,10,20,.28),inset 0 0 18px rgba(56,189,248,.05)}',
+      '.Sixlwa_bubble.Sixlwa_bubble{border-radius:8px 8px 8px 2px;border:1px solid rgba(87,216,255,.16);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 76%,rgba(87,216,255,.10)),color-mix(in srgb,var(--dsw-specific-bubble) 78%,transparent));box-shadow:0 2px 12px rgba(0,0,0,.16)}',
+      '.Sixlwa_userStack .Sixlwa_bubble{border-radius:8px 8px 2px 8px;border-color:rgba(87,216,255,.42);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 62%,rgba(87,216,255,.26)),color-mix(in srgb,var(--dsw-specific-bubble) 70%,rgba(87,216,255,.14)));box-shadow:0 2px 14px rgba(2,10,20,.28),inset 0 0 18px rgba(56,189,248,.05)}',
       '.JObwrW_fill.JObwrW_fill{stroke:' + AZ + '}',
       '.JObwrW_track.JObwrW_track{stroke:rgba(87,216,255,.18)}',
       '.JObwrW_trigger.JObwrW_trigger{color:#8fa9c2}',
@@ -726,46 +726,6 @@ window.__ModuleLoader__.load({
           useLocaleRevision();
           const now = useClock();
           const t = ctx.locale.bind(NS);
-          // Parallax: layers drift against the conversation scroll. DOM is
-          // written directly on the shared beat (no React re-render); CSS
-          // easing smooths between beats.
-          const nebRef = useRef(null);
-          const farRef = useRef(null);
-          const midRef = useRef(null);
-          const nearRef = useRef(null);
-          const scrollRef = useRef(0);
-          useEffect(function () {
-            let lastEl = null;
-            const onScroll = function (e) {
-              const tgt = e.target;
-              if (tgt != null && typeof tgt.scrollTop === 'number' && tgt !== document) {
-                lastEl = tgt;
-                scrollRef.current = tgt.scrollTop;
-              } else if (tgt === document || tgt == null) {
-                scrollRef.current = window.scrollY || 0;
-              }
-            };
-            window.addEventListener('scroll', onScroll, true);
-            const un = subscribeBeat(function () {
-              const set = function (ref, f) {
-                const el = ref.current;
-                if (el == null) return;
-                const y = Math.round(Math.max(-90, Math.min(0, scrollRef.current * -f)));
-                if (el.__y !== y) {
-                  el.__y = y;
-                  el.style.transform = 'translate3d(0,' + y + 'px,0)';
-                }
-              };
-              set(nebRef, 0.01);
-              set(farRef, 0.025);
-              set(midRef, 0.055);
-              set(nearRef, 0.095);
-            });
-            return function () {
-              window.removeEventListener('scroll', onScroll, true);
-              un();
-            };
-          }, []);
           return h(
             F,
             null,
@@ -774,15 +734,6 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'dsh-br-frame', 'aria-hidden': 'true' },
               h('i', { className: 'dsh-br-depth' }),
-              h('div', { className: 'dsh-br-sky', 'data-l': 'neb', 'aria-hidden': 'true', ref: nebRef }),
-              h('div', { className: 'dsh-br-sky', 'data-l': 'far', 'aria-hidden': 'true', ref: farRef }),
-              h('div', { className: 'dsh-br-sky', 'data-l': 'mid', 'aria-hidden': 'true', ref: midRef }),
-              h(
-                'div',
-                { className: 'dsh-br-sky', 'data-l': 'near', 'aria-hidden': 'true', ref: nearRef },
-                h('i', { className: 'dsh-br-stars' }),
-                h('i', { className: 'dsh-br-stars2' }),
-              ),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'top' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'bottom' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'left' }),

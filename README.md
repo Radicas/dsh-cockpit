@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v15.2.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v15.3.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,23 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 玻璃悬浮（v15.3）
+
+"文字悬浮在太空上"的实现口径——**不赌层叠**：
+
+- 天空画进 `.wSkVaW_root`（会话区最大底片）**自己的 background**，
+  `background-attachment:fixed` 钉在视口。文字永远渲染在自己背景的上方，
+  层级天然成立，无需把 overlay 塞到宿主不透明层之间（v15.0 教训不再犯）
+- v15.2 的 z-60 前景星层与滚动视差**移除**：天空变成"窗外"——不动，
+  舱内（文字/玻璃）随滚动穿过它，悬浮感更强且零每帧重绘（131 层渐变
+  逐帧移动 background-position 的成本不可接受）
+- 玻璃透明度保守起步：助手气泡 76–78%、用户 62–70%、输入卡 82–88%+blur(14px)
+  （blur 只给数量=1 的卡；气泡不做 backdrop-filter，量大）
+- 输入座渐变改半透明（实心 0.82 收尾），消息滑到 composer 下不再撞黑墙
+- 侧栏**保持舰体不透明**——本次故意不做"整页太空"，留作独立一步
+
+验收判据：滚动顺滑不掉帧；正文在玻璃上可读（不行就回调透明度参数）。
 
 ## 太空景深（v15.2）
 
@@ -110,7 +127,7 @@ interval + `subscribeBeat` 订阅分发，首个订阅者启动、最后一个�
 - **上下文圆环（ContextMeter）**：描边改青色
 
 ⚠️ 宿主覆写的选择器钉在**当前已安装 DSH 构建**的 CSS-module 哈希上
-（`uV2eYG_*` 输入条、`Sixlwa_*` 消息、`JObwrW_*` 上下文表）。
+（`uV2eYG_*` 输入条、`Sixlwa_*` 消息、`JObwrW_*` 上下文表、`wSkVaW_*` 会话根/输入座）。
 升级 DSH 后哈希变了，覆写会静默失效（回到宿主默认样式），插件其余部分不受影响。
 重新对齐方法：在 `dsh-client-ui-conversation/lib/client.js` 里搜
 `InputBar_module_css_default`、在 `dsh-client-ui-chat/lib/client.js` 里搜
