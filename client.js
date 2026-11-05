@@ -391,7 +391,11 @@ window.__ModuleLoader__.load({
          a fixed metronome is exactly what reads as "machine". */
       '@keyframes dsh-br-lifeswell{0%{transform:scale(.86)}36%{transform:scale(1.14)}58%{transform:scale(.98)}100%{transform:scale(.86)}}',
       '@keyframes dsh-br-lifeglow{0%,100%{opacity:.55}44%{opacity:1}68%{opacity:.74}}',
-      '@keyframes dsh-br-liferipple{0%{transform:scale(.55);opacity:.5}68%{opacity:.06}100%{transform:scale(2.6);opacity:0}}',
+      '@keyframes dsh-br-org-spin{to{transform:rotate(360deg)}}',
+      '@keyframes dsh-br-org-spin-r{to{transform:rotate(-360deg)}}',
+      '@keyframes dsh-br-org-gulp{0%{transform:scale(1.35)}35%{transform:scale(.55)}100%{transform:scale(1)}}',
+      '@keyframes dsh-br-org-wave{0%{transform:scale(.55);opacity:.55}70%{opacity:.07}100%{transform:scale(2.1);opacity:0}}',
+      '@keyframes dsh-br-org-flare{0%,100%{transform:scale(1)}50%{transform:scale(1.32)}}',
       '@keyframes dsh-br-ruler{from{background-position:0 0}to{background-position:-26px 0}}',
 
       /* --- frame (root decoration) ------------------------------------- */
@@ -476,49 +480,73 @@ window.__ModuleLoader__.load({
       '.dsh-br-key[data-k="tool"]{background:' + VIOLET + '}',
 
       /* flow pulse: two-subject ball + waveform strip + turn flash */
-      '.dsh-br-ball-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:7px;letter-spacing:.2em;text-transform:uppercase;flex:none}',
-      '.dsh-br-ball-name{flex:none;color:rgba(148,183,208,.55);transition:color .3s,text-shadow .3s}',
-      '.dsh-br-ball-name[data-lit="1"]{color:#dff2ff;text-shadow:0 0 8px rgba(87,216,255,.7)}',
-      '.dsh-br-ball-track{position:relative;flex:1 1 auto;height:14px;' +
-        'background-image:linear-gradient(90deg,rgba(87,216,255,.10),rgba(87,216,255,.30),rgba(87,216,255,.10)),' +
-        'repeating-linear-gradient(90deg,rgba(87,216,255,.16) 0 1px,transparent 1px 12.5%);' +
-        'background-size:100% 1px,100% 9px;background-position:center center;background-repeat:no-repeat}',
-      /* Living core: a zero-size anchor sitting on the station, so every child
-         scales around the exact point. `--dsh-live` (0..1) is fed from REAL
-         activity — output chars/s, tool running, thinking — and drives the
-         core's size, so a fast stream visibly breathes bigger than a slow one. */
-      '.dsh-br-ball{position:absolute;top:50%;width:0;height:0;color:' + AZ + ';' +
-        'transition:left .55s cubic-bezier(.22,.9,.2,1),transform .5s ease;' +
-        'transform:scale(calc(.72 + .52*var(--dsh-live,0)))}',
-      '.dsh-br-ball-core{position:absolute;left:0;top:0;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;' +
-        'border-radius:50%;background:radial-gradient(circle at 34% 30%,#eaf8ff,currentColor 66%);' +
-        'box-shadow:0 0 9px currentColor,0 0 20px currentColor;' +
-        'animation:dsh-br-lifeswell 2.6s ease-in-out infinite,dsh-br-lifeglow 4.3s ease-in-out infinite}',
-      '.dsh-br-ball-iris{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;' +
-        'border-radius:50%;background:rgba(3,8,15,.6);animation:dsh-br-lifeglow 1.7s ease-in-out infinite reverse}',
-      '.dsh-br-ball-halo{position:absolute;left:0;top:0;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;' +
-        'border-radius:50%;border:1px solid currentColor;' +
-        'animation:dsh-br-liferipple 2.9s cubic-bezier(.2,.6,.3,1) infinite}',
-      '.dsh-br-ball-echo{position:absolute;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%}',
-      '.dsh-br-ball[data-p="idle"]{color:#5b7086}',
-      '.dsh-br-ball[data-p="idle"] .dsh-br-ball-core{box-shadow:0 0 6px currentColor}',
-      '.dsh-br-ball[data-p="think"]{color:' + AZ + '}',
-      '.dsh-br-ball[data-p="out"]{color:' + GREEN + '}',
-      '.dsh-br-ball[data-p="tool"]{color:' + VIOLET + '}',
-      '.dsh-br-ball[data-p="ask"]{color:' + AMBER + '}',
-      '.dsh-br-ball[data-p="type"],.dsh-br-ball[data-p="sub"]{color:#bfe6ff}',
-      '.dsh-br-ball[data-p="fail"]{color:#ff6b6b}',
-      /* failure reads as stilled, not animated — motion belongs to the living */
-      '.dsh-br-ball[data-p="fail"] .dsh-br-ball-halo{animation:none;opacity:.18}',
-      '.dsh-br-ball[data-p="fail"] .dsh-br-ball-core{animation:dsh-br-lifeglow 3.4s ease-in-out infinite}',
-      '.dsh-br-flow-now{margin-left:2px;font-weight:600;letter-spacing:.16em;font-variant-numeric:tabular-nums;flex:none}',
-      '.dsh-br-flow-now[data-p="think"]{color:' + AZ + '}',
-      '.dsh-br-flow-now[data-p="out"]{color:#8ce8b0}',
-      '.dsh-br-flow-now[data-p="tool"]{color:#b3a5ff}',
-      '.dsh-br-flow-now[data-p="ask"]{color:#ffd79a}',
-      '.dsh-br-flow-now[data-p="type"],.dsh-br-flow-now[data-p="sub"]{color:#cfe9ff}',
-      '.dsh-br-flow-now[data-p="idle"]{color:rgba(148,183,208,.5)}',
-      '.dsh-br-flow-now[data-p="fail"]{color:#ff9d9d}',
+      /* The void being: a fixed-point organism. Phase lives in its BODY —
+         membrane pattern, petal posture, core size — never in a position on a
+         rail. A categorical state has no honest ordinal axis, and every
+         position-based draft was quietly inventing one. */
+      '.dsh-br-org-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex:none}',
+      '.dsh-br-org-phase{font-size:7.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#dff2ff;flex:none}',
+      '.dsh-br-org-metric{margin-left:auto;font-size:7.5px;letter-spacing:.1em;' +
+        'color:rgba(148,183,208,.8);font-variant-numeric:tabular-nums;flex:none}',
+      '.dsh-br-org{flex:none;width:28px;height:28px;color:' + AZ + ';overflow:visible;' +
+        'transform:scale(calc(.88 + .22*var(--dsh-live,0)));transition:transform .5s ease}',
+      '.dsh-br-org-core{fill:currentColor;transform-box:fill-box;transform-origin:center;' +
+        'animation:dsh-br-lifeswell 2.8s ease-in-out infinite;transition:opacity .4s ease}',
+      '.dsh-br-org-pupil{fill:rgba(3,8,15,.62);transition:r .5s ease}',
+      '.dsh-br-org-membrane{fill:none;stroke:currentColor;stroke-width:1.1;stroke-linecap:round;' +
+        'transform-box:fill-box;transform-origin:center;' +
+        'transition:stroke-dasharray .5s ease,opacity .4s ease,stroke-width .4s ease,transform .5s ease}',
+      '.dsh-br-org-arc{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;opacity:0;' +
+        'transform-box:fill-box;transform-origin:center}',
+      '.dsh-br-org-petals{stroke:currentColor;stroke-width:1.1;stroke-linecap:round;opacity:.55;' +
+        'transform-box:fill-box;transform-origin:center;transition:transform .5s ease,opacity .4s ease}',
+      '.dsh-br-org-wave{fill:none;stroke:currentColor;stroke-width:1;opacity:0;' +
+        'transform-box:fill-box;transform-origin:center}',
+      /* idle — curled up, barely alive */
+      '.dsh-br-org[data-p="idle"]{color:#5b7086}',
+      '.dsh-br-org[data-p="idle"] .dsh-br-org-membrane{stroke-dasharray:59.7;opacity:.45}',
+      '.dsh-br-org[data-p="idle"] .dsh-br-org-petals{transform:scale(.42);opacity:.25}',
+      '.dsh-br-org[data-p="idle"] .dsh-br-org-pupil{r:0}',
+      '.dsh-br-org[data-p="idle"] .dsh-br-org-core{animation-duration:3.6s}',
+      /* type — membrane opens a gap toward you: it is listening */
+      '.dsh-br-org[data-p="type"]{color:#bfe6ff}',
+      '.dsh-br-org[data-p="type"] .dsh-br-org-membrane{stroke-dasharray:50 10;transform:rotate(-150deg);opacity:.85}',
+      '.dsh-br-org[data-p="type"] .dsh-br-org-petals{transform:scale(.75) rotate(45deg);opacity:.4}',
+      /* sub — a gulp, played once on entry */
+      '.dsh-br-org[data-p="sub"]{color:#bfe6ff}',
+      '.dsh-br-org[data-p="sub"] .dsh-br-org-membrane{stroke-dasharray:59.7;stroke-width:1.6}',
+      '.dsh-br-org[data-p="sub"] .dsh-br-org-core{animation:dsh-br-org-gulp .55s ease-out}',
+      /* think — a dashed shell spinning slowly: it is turning something over */
+      '.dsh-br-org[data-p="think"]{color:' + AZ + '}',
+      '.dsh-br-org[data-p="think"] .dsh-br-org-membrane{stroke-dasharray:5 4.95;animation:dsh-br-org-spin 3.4s linear infinite}',
+      '.dsh-br-org[data-p="think"] .dsh-br-org-petals{transform:scale(.72) rotate(-30deg);opacity:.35}',
+      '.dsh-br-org[data-p="think"] .dsh-br-org-core{animation-duration:1.9s}',
+      /* tool — two shells counter-rotating and petals flared: it is gripping */
+      '.dsh-br-org[data-p="tool"]{color:' + VIOLET + '}',
+      '.dsh-br-org[data-p="tool"] .dsh-br-org-membrane{stroke-dasharray:29.9 29.85;animation:dsh-br-org-spin 2.2s linear infinite}',
+      '.dsh-br-org[data-p="tool"] .dsh-br-org-arc{opacity:.9;stroke-dasharray:14 15.85;' +
+        'animation:dsh-br-org-spin-r 1.6s linear infinite}',
+      '.dsh-br-org[data-p="tool"] .dsh-br-org-petals{transform:scale(1.18) rotate(45deg);opacity:.85}',
+      '.dsh-br-org[data-p="tool"] .dsh-br-org-core{animation-duration:1.3s}',
+      /* out — waves pushed outward at the REAL character rate */
+      '.dsh-br-org[data-p="out"]{color:' + GREEN + '}',
+      '.dsh-br-org[data-p="out"] .dsh-br-org-membrane{stroke-dasharray:59.7;stroke-width:1.3}',
+      '.dsh-br-org[data-p="out"] .dsh-br-org-wave{' +
+        'animation:dsh-br-org-wave var(--dsh-wave,1.4s) cubic-bezier(.2,.6,.3,1) infinite}',
+      '.dsh-br-org[data-p="out"] .dsh-br-org-petals{opacity:.85;' +
+        'animation:dsh-br-org-flare var(--dsh-wave,1.4s) ease-in-out infinite}',
+      '.dsh-br-org[data-p="out"] .dsh-br-org-core{animation-duration:1.1s}',
+      /* ask — an aperture opening upward, pupil dilated: it is looking at you */
+      '.dsh-br-org[data-p="ask"]{color:' + AMBER + '}',
+      '.dsh-br-org[data-p="ask"] .dsh-br-org-membrane{stroke-dasharray:46 13.7;transform:rotate(-90deg);stroke-width:1.4}',
+      '.dsh-br-org[data-p="ask"] .dsh-br-org-pupil{r:3.2}',
+      '.dsh-br-org[data-p="ask"] .dsh-br-org-petals{transform:scale(.9) rotate(90deg);opacity:.6}',
+      '.dsh-br-org[data-p="ask"] .dsh-br-org-core{animation-duration:2.6s}',
+      /* fail — the shell breaks into three pieces and stops moving */
+      '.dsh-br-org[data-p="fail"]{color:#ff6b6b}',
+      '.dsh-br-org[data-p="fail"] .dsh-br-org-membrane{stroke-dasharray:12 7.9;opacity:.75}',
+      '.dsh-br-org[data-p="fail"] .dsh-br-org-petals{transform:scale(.45);opacity:.3}',
+      '.dsh-br-org[data-p="fail"] .dsh-br-org-core{animation-duration:4.2s;opacity:.8}',
       '.dsh-br-strip-wrap{position:relative;flex:1 1 auto;min-height:44px;display:flex}',
       '.dsh-br-strip{width:100%;height:100%;display:block}',
       '.dsh-br-strip .dsh-br-strip-head{animation:dsh-br-pulse 1s ease-in-out infinite}',
@@ -1419,13 +1447,6 @@ window.__ModuleLoader__.load({
             ask: AMBER,
             fail: '#ff6b6b',
           };
-          // Stations are distinct on purpose: the old map put ask here at 18
-          // next to type at 12, and fail at the SAME 78 as tool, so two
-          // different states could not be told apart by position.
-          // Left half = you at the console, right half = the agent.
-          const BALL_POS = { ask: 8, type: 20, sub: 34, idle: 50, think: 52, tool: 68, out: 84, fail: 92 };
-          const youLit = curPhase === 'type' || curPhase === 'sub' || curPhase === 'ask';
-          const meLit = curPhase === 'think' || curPhase === 'out' || curPhase === 'tool';
           let strip = null;
           let flashEl = null;
           if (pulse.length >= 2) {
@@ -1504,9 +1525,10 @@ window.__ModuleLoader__.load({
               }
             }
           }
-          // How alive the core looks. Everything here is real: mid-stream it is
-          // the actual characters-per-second, otherwise the phase itself.
-          const phasePos = (p) => (BALL_POS[p] != null ? BALL_POS[p] : 50);
+          // How alive the organism looks. Mid-stream this is the REAL
+          // characters-per-second; otherwise it is a per-phase step. The step
+          // values are the only numbers in this widget that are chosen rather
+          // than measured — the phase itself and the rate are both real.
           let vital = 0.18;
           if (curPhase === 'out') vital = Math.min(1, 0.45 + (cpsLive == null ? 0 : cpsLive) / 45);
           else if (curPhase === 'tool') vital = 0.7;
@@ -1515,29 +1537,19 @@ window.__ModuleLoader__.load({
           else if (curPhase === 'ask') vital = 0.4;
           else if (curPhase === 'fail') vital = 0.32;
 
-          // Trail: the last distinct phases actually recorded in the sample
-          // buffer — a memory of where the process has been, not a flourish.
-          const echoRows = [];
-          if (pulse.length > 1) {
-            let prev = curPhase;
-            for (let i = pulse.length - 1; i >= 0 && echoRows.length < 3; i--) {
-              const p = pulse[i].p;
-              if (p === prev) continue;
-              prev = p;
-              echoRows.push({ p: p, pos: phasePos(p) });
-            }
-          }
-          const echoEls = echoRows.map((row, index) =>
-            h('i', {
-              key: 'echo-' + row.p + '-' + index,
-              className: 'dsh-br-ball-echo',
-              style: {
-                left: row.pos + '%',
-                background: PHASE_COLOR[row.p] != null ? PHASE_COLOR[row.p] : '#5b7086',
-                opacity: Math.max(0.08, 0.26 - index * 0.07),
-              },
-            }),
-          );
+          // Wave period follows the same real rate, quantised to 0.1s so the
+          // CSS animation is not restarted on every 5Hz tick.
+          const waveRaw = curPhase === 'out' ? 1.8 - (cpsLive == null ? 0 : cpsLive) / 45 : 1.4;
+          const waveDur = (Math.round(Math.max(0.5, Math.min(1.8, waveRaw)) * 10) / 10).toFixed(1);
+
+          // The real figure that belongs to this phase, shown beside its name.
+          let orgMetric = '\u2014';
+          if (curPhase === 'out') orgMetric = cpsLive == null ? '\u2014' : cpsLive.toFixed(1) + ' ' + t('cps');
+          else if (curPhase === 'tool') orgMetric = toolRows.length > 0 ? toolRows[0].name : '\u2014';
+          else if (curPhase === 'think') orgMetric = meta.thinkMs > 0 ? fmtS(meta.thinkMs) : '\u2014';
+          else if (curPhase === 'type' || curPhase === 'sub') orgMetric = draftLen + ' ' + t('charUnit');
+          else if (curPhase === 'ask') orgMetric = t('input');
+          else if (curPhase === 'fail') orgMetric = errN > 0 ? '\u00D7' + errN : '\u2014';
 
           const flowPanel = h(
             'div',
@@ -1545,25 +1557,32 @@ window.__ModuleLoader__.load({
             h('div', { className: 'dsh-br-panel-head' }, t('flow'), h('b', null, totalTokens === 0 ? '\u2014' : fmt(totalTokens))),
             h(
               'div',
-              { className: 'dsh-br-ball-row' },
-              h('span', { className: 'dsh-br-ball-name', 'data-lit': youLit ? '1' : '0' }, t('you')),
+              { className: 'dsh-br-org-row' },
               h(
-                'span',
-                { className: 'dsh-br-ball-track' },
-                ...echoEls,
+                'svg',
+                {
+                  className: 'dsh-br-org',
+                  viewBox: '0 0 28 28',
+                  'data-p': curPhase,
+                  'aria-hidden': 'true',
+                  style: { '--dsh-live': String(vital.toFixed(2)), '--dsh-wave': waveDur + 's' },
+                },
+                h('circle', { className: 'dsh-br-org-wave', cx: 14, cy: 14, r: 9.5 }),
+                h('circle', { className: 'dsh-br-org-membrane', cx: 14, cy: 14, r: 9.5 }),
+                h('circle', { className: 'dsh-br-org-arc', cx: 14, cy: 14, r: 9.5 }),
                 h(
-                  'i',
-                  {
-                    className: 'dsh-br-ball',
-                    'data-p': curPhase,
-                    style: { left: phasePos(curPhase) + '%', '--dsh-live': String(vital.toFixed(2)) },
-                  },
-                  h('i', { className: 'dsh-br-ball-halo' }),
-                  h('i', { className: 'dsh-br-ball-core' }, h('i', { className: 'dsh-br-ball-iris' })),
+                  'g',
+                  { className: 'dsh-br-org-petals' },
+                  h('line', { x1: 14, y1: 2.4, x2: 14, y2: 5.2 }),
+                  h('line', { x1: 14, y1: 22.8, x2: 14, y2: 25.6 }),
+                  h('line', { x1: 2.4, y1: 14, x2: 5.2, y2: 14 }),
+                  h('line', { x1: 22.8, y1: 14, x2: 25.6, y2: 14 }),
                 ),
+                h('circle', { className: 'dsh-br-org-core', cx: 14, cy: 14, r: 5 }),
+                h('circle', { className: 'dsh-br-org-pupil', cx: 14, cy: 14, r: 1.5 }),
               ),
-              h('span', { className: 'dsh-br-ball-name', 'data-lit': meLit ? '1' : '0' }, t('me')),
-              h('span', { className: 'dsh-br-flow-now', 'data-p': curPhase }, t(curPhase)),
+              h('span', { className: 'dsh-br-org-phase', 'data-p': curPhase }, t(curPhase)),
+              h('span', { className: 'dsh-br-org-metric' }, orgMetric),
             ),
             h(
               'div',
