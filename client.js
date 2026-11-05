@@ -286,7 +286,7 @@ window.__ModuleLoader__.load({
          own background with fixed attachment — text and bubbles always render
          above their own background (no stacking gamble), the view outside the
          window stays put while the cabin scrolls. */
-      '.wSkVaW_root.wSkVaW_root{background:' + NEB + ',' + FAR + ',' + MID + ',' + STARS + ',linear-gradient(0deg,#050b16,#03060c);background-attachment:fixed}',
+      '.wSkVaW_root.wSkVaW_root{background:' + NEB + ',' + FAR + ',' + MID + ',' + STARS + ',linear-gradient(0deg,#050b16,#03060c)}',
       '.wSkVaW_root[data-phase=active] .wSkVaW_composerSeat.wSkVaW_composerSeat{background:linear-gradient(180deg,rgba(4,8,15,0) 0px,rgba(4,8,15,.82) 44px)}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
@@ -496,7 +496,7 @@ window.__ModuleLoader__.load({
       /* host restyle — pinned to this DSH build's CSS-module hashes;       */
       /* doubled class raises specificity over the host sheet.              */
       /* ================================================================== */
-      '.uV2eYG_card.uV2eYG_card{--dsw-alias-label-primary:#e6f4ff;--dsw-alias-label-secondary:#a5c0d6;--dsw-alias-label-tertiary:#8fa9c2;--dsw-alias-label-caption:#7e97ae;border-radius:8px;border:1px solid rgba(87,216,255,.30);background:linear-gradient(180deg,rgba(10,21,36,.82),rgba(6,12,22,.88));backdrop-filter:blur(14px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.15);box-shadow:0 12px 40px rgba(0,0,0,.45),0 0 26px rgba(56,189,248,.08),inset 0 1px 0 rgba(140,216,255,.10);transition:border-color .18s,box-shadow .18s}',
+      '.uV2eYG_card.uV2eYG_card{--dsw-alias-label-primary:#e6f4ff;--dsw-alias-label-secondary:#a5c0d6;--dsw-alias-label-tertiary:#8fa9c2;--dsw-alias-label-caption:#7e97ae;border-radius:8px;border:1px solid rgba(87,216,255,.30);background:linear-gradient(180deg,rgba(10,21,36,.88),rgba(6,12,22,.92));box-shadow:0 12px 40px rgba(0,0,0,.45),0 0 26px rgba(56,189,248,.08),inset 0 1px 0 rgba(140,216,255,.10);transition:border-color .18s,box-shadow .18s}',
       '.uV2eYG_card.uV2eYG_card:focus-within{border-color:rgba(87,216,255,.65);box-shadow:0 12px 44px rgba(0,0,0,.5),0 0 34px rgba(56,189,248,.16),inset 0 1px 0 rgba(140,216,255,.14)}',
       '.uV2eYG_card.uV2eYG_card:before{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;opacity:.6;background:linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/1px 9px no-repeat}',
       '.uV2eYG_input.uV2eYG_input{caret-color:' + AZ + '}',
