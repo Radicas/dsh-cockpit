@@ -46,21 +46,6 @@ window.__ModuleLoader__.load({
     const AZ = '#57d8ff';
     const AZ_DIM = 'rgba(87,216,255,.30)';
     const AZ_FAINT = 'rgba(87,216,255,.14)';
-
-    /* Static starfield: one fixed, hand-written star table (never re-random,
-       so nothing that pretends to measure). % positions, two brightness
-       tiers, plus a faint nebula wash matching the boot sky. */
-    const STARS = [
-      [17, 8, 1], [42, 14, 0], [71, 6, 0], [88, 19, 1], [9, 27, 0], [63, 23, 0],
-      [34, 31, 1], [80, 34, 0], [25, 44, 0], [55, 49, 1], [5, 55, 0], [72, 57, 0],
-      [94, 52, 0], [40, 63, 0], [12, 71, 1], [60, 76, 0], [85, 73, 0], [28, 83, 0],
-      [48, 88, 1], [77, 90, 0], [6, 95, 0], [92, 86, 0],
-    ]
-      .map(function (p) {
-        return 'radial-gradient(' + (p[2] ? '1.6px 1.6px' : '1px 1px') + ' at ' + p[0] + '% ' + p[1] +
-          '%, rgba(223,242,255,' + (p[2] ? '.5,' : '.26,') + ' transparent 100%)';
-      })
-      .join(',');
     const VIOLET = '#8b7cf6';
     const GREEN = '#4ade80';
     const AMBER = '#ffc46b';
@@ -251,8 +236,6 @@ window.__ModuleLoader__.load({
       /* --- frame (root decoration) ------------------------------------- */
       '.dsh-br-frame{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
       '.dsh-br-depth{position:absolute;inset:0;background:radial-gradient(58% 44% at 14% 6%,rgba(56,189,248,.055),transparent 70%),radial-gradient(50% 42% at 88% 94%,rgba(87,216,255,.05),transparent 70%)}',
-      '.dsh-br-stars{position:absolute;inset:0;background:' + STARS + ',radial-gradient(70% 50% at 50% 0%,rgba(56,130,246,.05),transparent 70%)}',
-      '.dsh-br-stars2{position:absolute;inset:0;background:radial-gradient(2px 2px at 24% 16%,rgba(223,242,255,.55),transparent 100%),radial-gradient(2px 2px at 68% 38%,rgba(159,228,255,.5),transparent 100%),radial-gradient(2px 2px at 13% 66%,rgba(223,242,255,.45),transparent 100%),radial-gradient(2px 2px at 90% 78%,rgba(159,228,255,.4),transparent 100%);animation:dsh-br-breathe 7s ease-in-out infinite}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
       '.dsh-br-edge[data-edge="top"]{top:6px}',
@@ -362,25 +345,6 @@ window.__ModuleLoader__.load({
       '.dsh-br-urow{cursor:help}',
       '.dsh-br-arc{cursor:help}',
       '[data-approval-key].dsh-br-flash,[data-turn-tail].dsh-br-flash{animation:dsh-br-flashring 1.6s ease}',
-
-      /* ornament: viewfinder brackets, hull struts, standby watermark */
-      '.dsh-br-vf{position:fixed;z-index:55;pointer-events:none}',
-      '.dsh-br-vf b{position:absolute;width:26px;height:26px;opacity:.45;border:0 solid ' + AZ_FAINT + ';transition:opacity .3s ease,border-color .3s ease}',
-      '.dsh-br-vf b[data-c="tl"]{top:0;left:0;border-top-width:1.5px;border-left-width:1.5px}',
-      '.dsh-br-vf b[data-c="tr"]{top:0;right:0;border-top-width:1.5px;border-right-width:1.5px}',
-      '.dsh-br-vf b[data-c="bl"]{bottom:0;left:0;border-bottom-width:1.5px;border-left-width:1.5px}',
-      '.dsh-br-vf b[data-c="br"]{bottom:0;right:0;border-bottom-width:1.5px;border-right-width:1.5px}',
-      '.dsh-br-vf[data-live="run"] b{border-color:' + AZ_DIM + ';opacity:.95}',
-      '.dsh-br-vf[data-live="input"] b{border-color:rgba(255,196,107,.5);opacity:.85}',
-      '.dsh-br-vf[data-live="fault"] b,.dsh-br-vf[data-live="halted"] b{border-color:rgba(255,107,107,.55);opacity:.9}',
-      '.dsh-br-wm{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}',
-      '.dsh-br-wm svg{opacity:.14}',
-      '.dsh-br-wm span{font-size:10px;letter-spacing:.62em;color:rgba(148,183,208,.28)}',
-      '.dsh-br-strut{position:absolute;width:14px;height:1px;pointer-events:none}',
-      '.dsh-br-inst[data-side="left"] .dsh-br-strut{right:100%;background:linear-gradient(270deg,' + AZ_FAINT + ',transparent)}',
-      '.dsh-br-inst[data-side="left"] .dsh-br-strut::after{content:"";position:absolute;left:-1px;top:-3px;width:1px;height:7px;background:rgba(87,216,255,.25)}',
-      '.dsh-br-inst[data-side="right"] .dsh-br-strut{left:100%;background:linear-gradient(90deg,' + AZ_FAINT + ',transparent)}',
-      '.dsh-br-inst[data-side="right"] .dsh-br-strut::after{content:"";position:absolute;right:-1px;top:-3px;width:1px;height:7px;background:rgba(87,216,255,.25)}',
       '@keyframes dsh-br-flashring{0%,55%{box-shadow:0 0 0 1px rgba(255,196,107,.75),0 0 22px rgba(255,196,107,.3)}100%{box-shadow:none}}',
       '.dsh-br-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:8px;letter-spacing:.3em;color:rgba(148,183,208,.4)}',
 
@@ -518,36 +482,6 @@ window.__ModuleLoader__.load({
       { style: { bottom: 6, left: 6 }, transform: 'scaleY(-1)' },
       { style: { bottom: 6, right: 6 }, transform: 'scale(-1, -1)' },
     ];
-
-    /** Failure ledger scan: last 40 loaded nodes for real red signals
-     *  (turn-error notices, model-retry lifecycle, failed tool results).
-     *  Packed as a string so hook selectors memo on changes only. */
-    function scanErr(s) {
-      if (s == null || s.legacy == null || s.order == null || s.legacy.nodes == null) return '0|0|||';
-      const ord = s.order;
-      const store = s.legacy.nodes;
-      const from = Math.max(0, ord.length - 40);
-      let turnErr = 0;
-      let toolErr = 0;
-      let retry = '';
-      let code = '';
-      let msg = '';
-      for (let i = ord.length - 1; i >= from; i--) {
-        let raw = null;
-        try { raw = store.get(ord[i]); } catch (err) {}
-        const d = raw == null ? null : raw.kind != null ? raw : raw.data != null ? raw.data : null;
-        if (d == null || typeof d.kind !== 'string') continue;
-        if (d.kind === 'turn-error') {
-          if (turnErr === 0) {
-            code = String(d.code == null ? '' : d.code);
-            msg = String(d.message == null ? '' : d.message).slice(0, 60);
-          }
-          turnErr += 1;
-        } else if (d.kind === 'tool-result' && d.isError === true) toolErr += 1;
-        else if (d.kind === 'model-retry' && retry === '') retry = String(d.retryState == null ? '' : d.retryState);
-      }
-      return turnErr + '|' + toolErr + '|' + retry + '|' + code + '|' + msg;
-    }
 
     /** Shared heartbeat: ONE 70ms interval for the whole plugin, fanned out
      *  to subscribers. Starts lazily on first subscriber, stops when the last
@@ -731,8 +665,6 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'dsh-br-frame', 'aria-hidden': 'true' },
               h('i', { className: 'dsh-br-depth' }),
-              h('i', { className: 'dsh-br-stars' }),
-              h('i', { className: 'dsh-br-stars2' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'top' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'bottom' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'left' }),
@@ -821,7 +753,32 @@ window.__ModuleLoader__.load({
 
           // Failure ledger: scan the last 40 loaded nodes for real red signals —
           // turn-error notices, model-retry lifecycle, failed tool results.
-          const errSig = pick(props.useChat, scanErr, '0|0|||');
+          const errSig = pick(props.useChat, (s) => {
+            if (s == null || s.legacy == null || s.order == null || s.legacy.nodes == null) return '0|0|||';
+            const ord = s.order;
+            const store = s.legacy.nodes;
+            const from = Math.max(0, ord.length - 40);
+            let turnErr = 0;
+            let toolErr = 0;
+            let retry = '';
+            let code = '';
+            let msg = '';
+            for (let i = ord.length - 1; i >= from; i--) {
+              let raw = null;
+              try { raw = store.get(ord[i]); } catch (err) {}
+              const d = raw == null ? null : raw.kind != null ? raw : raw.data != null ? raw.data : null;
+              if (d == null || typeof d.kind !== 'string') continue;
+              if (d.kind === 'turn-error') {
+                if (turnErr === 0) {
+                  code = String(d.code == null ? '' : d.code);
+                  msg = String(d.message == null ? '' : d.message).slice(0, 60);
+                }
+                turnErr += 1;
+              } else if (d.kind === 'tool-result' && d.isError === true) toolErr += 1;
+              else if (d.kind === 'model-retry' && retry === '') retry = String(d.retryState == null ? '' : d.retryState);
+            }
+            return turnErr + '|' + toolErr + '|' + retry + '|' + code + '|' + msg;
+          }, '0|0|||');
           const errParts = String(errSig).split('|');
           const turnErrN = Number(errParts[0]) || 0;
           const toolErrN = Number(errParts[1]) || 0;
@@ -1315,18 +1272,8 @@ window.__ModuleLoader__.load({
               },
               agentPanel,
               flowPanel,
-              h('i', { className: 'dsh-br-strut', style: { top: '22px' } }),
-              h('i', { className: 'dsh-br-strut', style: { bottom: '120px' } }),
             ),
-            h(
-              'div',
-              { className: 'dsh-br-inst', 'data-side': 'right' },
-              ctxPanel,
-              mixPanel,
-              usePanel,
-              h('i', { className: 'dsh-br-strut', style: { top: '22px' } }),
-              h('i', { className: 'dsh-br-strut', style: { bottom: '120px' } }),
-            ),
+            h('div', { className: 'dsh-br-inst', 'data-side': 'right' }, ctxPanel, mixPanel, usePanel),
           );
         }
 
@@ -1523,101 +1470,6 @@ window.__ModuleLoader__.load({
           );
         }
 
-        // ---- viewfinder brackets + standby watermark -----------------------
-        // A zero-height probe cell inside the composer dock gives the TRUE
-        // content bounds; brackets frame that box, tinted by real status.
-        function ContentFrame(props) {
-          useLocaleRevision();
-          const t = ctx.locale.bind(NS);
-          const sessionId = props.sessionId;
-          const probeRef = useRef(null);
-          const [box, setBox] = useState(null);
-          const lastRef = useRef(0);
-          useEffect(
-            () =>
-              subscribeBeat((n) => {
-                if (n - lastRef.current < 400) return;
-                lastRef.current = n;
-                const el = probeRef.current;
-                if (el == null) return;
-                const r = el.getBoundingClientRect();
-                if (r.width <= 0) return;
-                const nb = {
-                  l: Math.round(r.left),
-                  rt: Math.round(window.innerWidth - r.right),
-                  b: Math.round(window.innerHeight - r.top) + 10,
-                };
-                setBox((prev) =>
-                  prev == null || Math.abs(prev.l - nb.l) > 1 || Math.abs(prev.rt - nb.rt) > 1 || Math.abs(prev.b - nb.b) > 1 ? nb : prev,
-                );
-              }),
-            [],
-          );
-          const pickC = (fn, sel, def) => {
-            try {
-              if (typeof fn !== 'function') return def;
-              const v = fn(sel);
-              return v == null ? def : v;
-            } catch (err) {
-              return def;
-            }
-          };
-          let stats;
-          try {
-            stats = typeof props.useProjection === 'function' ? props.useProjection('sessionStats') : undefined;
-          } catch (err) {
-            stats = undefined;
-          }
-          const status =
-            typeof props.useSessionStatus === 'function'
-              ? props.useSessionStatus((snapshot) => (sessionId == null ? undefined : snapshot.get(sessionId)))
-              : undefined;
-          const errSig = pickC(props.useChat, scanErr, '0|0|||');
-          const ep = String(errSig).split('|');
-          const tErr = Number(ep[0]) || 0;
-          const halt = tErr > 0 && ep[3] === 'INTERRUPTED';
-          const fault = tErr > 0 && !halt;
-          const live =
-            status != null && status.pendingInteraction != null
-              ? 'input'
-              : status != null && status.running === true
-                ? 'run'
-                : halt
-                  ? 'halted'
-                  : fault
-                    ? 'fault'
-                    : 'standby';
-          const empty = stats != null && stats.turns === 0;
-          return h(
-            F,
-            null,
-            h('div', { ref: probeRef, style: { flex: '1 1 100%', height: 0, marginTop: '-6px' } }),
-            box == null
-              ? null
-              : h(
-                  'div',
-                  {
-                    className: 'dsh-br-vf',
-                    'data-live': live,
-                    'aria-hidden': 'true',
-                    style: { left: box.l + 'px', right: box.rt + 'px', top: '96px', bottom: box.b + 'px' },
-                  },
-                  h('b', { 'data-c': 'tl' }),
-                  h('b', { 'data-c': 'tr' }),
-                  h('b', { 'data-c': 'bl' }),
-                  h('b', { 'data-c': 'br' }),
-                  empty
-                    ? h(
-                        'div',
-                        { className: 'dsh-br-wm' },
-                        h(HeroEmblem, { size: 110 }),
-                        h('span', null, t('standby')),
-                      )
-                    : null,
-                ),
-          );
-        }
-
         // ---- hero emblem --------------------------------------------------------------
         function HeroEmblem(props) {
           const size = typeof props.size === 'number' ? props.size : 48;
@@ -1708,14 +1560,6 @@ window.__ModuleLoader__.load({
             ctx.slots.register(
               { name: 'conversation.composer.dock', id: 'bridge-instruments', order: 2 },
               safe(SideInstruments),
-            ),
-          ),
-        );
-        attempt('viewfinder', () =>
-          ctx.slots.inject('conversation.composer.dock', () =>
-            ctx.slots.register(
-              { name: 'conversation.composer.dock', id: 'bridge-viewfinder', order: 3 },
-              safe(ContentFrame),
             ),
           ),
         );
