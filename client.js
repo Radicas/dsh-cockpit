@@ -386,6 +386,12 @@ window.__ModuleLoader__.load({
       '@keyframes dsh-br-draw{from{stroke-dashoffset:220}to{stroke-dashoffset:0}}',
       '@keyframes dsh-br-fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}',
       '@keyframes dsh-br-bootout{to{opacity:0;visibility:hidden}}',
+      /* Deliberately asymmetric (fast swell, slow settle) and co-prime in
+         period with the glow, so the combined rhythm never exactly repeats —
+         a fixed metronome is exactly what reads as "machine". */
+      '@keyframes dsh-br-lifeswell{0%{transform:scale(.86)}36%{transform:scale(1.14)}58%{transform:scale(.98)}100%{transform:scale(.86)}}',
+      '@keyframes dsh-br-lifeglow{0%,100%{opacity:.55}44%{opacity:1}68%{opacity:.74}}',
+      '@keyframes dsh-br-liferipple{0%{transform:scale(.55);opacity:.5}68%{opacity:.06}100%{transform:scale(2.6);opacity:0}}',
       '@keyframes dsh-br-ruler{from{background-position:0 0}to{background-position:-26px 0}}',
 
       /* --- frame (root decoration) ------------------------------------- */
@@ -473,14 +479,38 @@ window.__ModuleLoader__.load({
       '.dsh-br-ball-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:7px;letter-spacing:.2em;text-transform:uppercase;flex:none}',
       '.dsh-br-ball-name{flex:none;color:rgba(148,183,208,.55);transition:color .3s,text-shadow .3s}',
       '.dsh-br-ball-name[data-lit="1"]{color:#dff2ff;text-shadow:0 0 8px rgba(87,216,255,.7)}',
-      '.dsh-br-ball-track{position:relative;flex:1 1 auto;height:1px;background:linear-gradient(90deg,rgba(87,216,255,.28),rgba(87,216,255,.10))}',
-      '.dsh-br-ball{position:absolute;top:50%;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;border-radius:50%;background:' + AZ + ';box-shadow:0 0 12px rgba(87,216,255,.85);transition:left .65s cubic-bezier(.25,.7,.25,1),background .35s,box-shadow .35s}',
-      '.dsh-br-ball[data-p="idle"]{background:#5b7086;box-shadow:0 0 6px rgba(91,112,134,.5);animation:dsh-br-breathe 3.2s ease-in-out infinite}',
-      '.dsh-br-ball[data-p="think"]{animation:dsh-br-breathe 1.5s ease-in-out infinite}',
-      '.dsh-br-ball[data-p="out"]{background:' + GREEN + ';box-shadow:0 0 12px rgba(74,222,128,.9)}',
-      '.dsh-br-ball[data-p="tool"]{background:' + VIOLET + ';box-shadow:0 0 12px rgba(139,124,246,.9)}',
-      '.dsh-br-ball[data-p="ask"]{background:' + AMBER + ';box-shadow:0 0 12px rgba(255,196,107,.9)}',
-      '.dsh-br-ball[data-p="type"],.dsh-br-ball[data-p="sub"]{background:#bfe6ff;box-shadow:0 0 10px rgba(191,230,255,.8)}',
+      '.dsh-br-ball-track{position:relative;flex:1 1 auto;height:14px;' +
+        'background-image:linear-gradient(90deg,rgba(87,216,255,.10),rgba(87,216,255,.30),rgba(87,216,255,.10)),' +
+        'repeating-linear-gradient(90deg,rgba(87,216,255,.16) 0 1px,transparent 1px 12.5%);' +
+        'background-size:100% 1px,100% 9px;background-position:center center;background-repeat:no-repeat}',
+      /* Living core: a zero-size anchor sitting on the station, so every child
+         scales around the exact point. `--dsh-live` (0..1) is fed from REAL
+         activity — output chars/s, tool running, thinking — and drives the
+         core's size, so a fast stream visibly breathes bigger than a slow one. */
+      '.dsh-br-ball{position:absolute;top:50%;width:0;height:0;color:' + AZ + ';' +
+        'transition:left .55s cubic-bezier(.22,.9,.2,1),transform .5s ease;' +
+        'transform:scale(calc(.72 + .52*var(--dsh-live,0)))}',
+      '.dsh-br-ball-core{position:absolute;left:0;top:0;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;' +
+        'border-radius:50%;background:radial-gradient(circle at 34% 30%,#eaf8ff,currentColor 66%);' +
+        'box-shadow:0 0 9px currentColor,0 0 20px currentColor;' +
+        'animation:dsh-br-lifeswell 2.6s ease-in-out infinite,dsh-br-lifeglow 4.3s ease-in-out infinite}',
+      '.dsh-br-ball-iris{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;' +
+        'border-radius:50%;background:rgba(3,8,15,.6);animation:dsh-br-lifeglow 1.7s ease-in-out infinite reverse}',
+      '.dsh-br-ball-halo{position:absolute;left:0;top:0;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;' +
+        'border-radius:50%;border:1px solid currentColor;' +
+        'animation:dsh-br-liferipple 2.9s cubic-bezier(.2,.6,.3,1) infinite}',
+      '.dsh-br-ball-echo{position:absolute;top:50%;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%}',
+      '.dsh-br-ball[data-p="idle"]{color:#5b7086}',
+      '.dsh-br-ball[data-p="idle"] .dsh-br-ball-core{box-shadow:0 0 6px currentColor}',
+      '.dsh-br-ball[data-p="think"]{color:' + AZ + '}',
+      '.dsh-br-ball[data-p="out"]{color:' + GREEN + '}',
+      '.dsh-br-ball[data-p="tool"]{color:' + VIOLET + '}',
+      '.dsh-br-ball[data-p="ask"]{color:' + AMBER + '}',
+      '.dsh-br-ball[data-p="type"],.dsh-br-ball[data-p="sub"]{color:#bfe6ff}',
+      '.dsh-br-ball[data-p="fail"]{color:#ff6b6b}',
+      /* failure reads as stilled, not animated — motion belongs to the living */
+      '.dsh-br-ball[data-p="fail"] .dsh-br-ball-halo{animation:none;opacity:.18}',
+      '.dsh-br-ball[data-p="fail"] .dsh-br-ball-core{animation:dsh-br-lifeglow 3.4s ease-in-out infinite}',
       '.dsh-br-flow-now{margin-left:2px;font-weight:600;letter-spacing:.16em;font-variant-numeric:tabular-nums;flex:none}',
       '.dsh-br-flow-now[data-p="think"]{color:' + AZ + '}',
       '.dsh-br-flow-now[data-p="out"]{color:#8ce8b0}',
@@ -1389,7 +1419,11 @@ window.__ModuleLoader__.load({
             ask: AMBER,
             fail: '#ff6b6b',
           };
-          const BALL_POS = { idle: 50, type: 12, sub: 34, think: 66, tool: 78, out: 90, ask: 18, fail: 78 };
+          // Stations are distinct on purpose: the old map put ask here at 18
+          // next to type at 12, and fail at the SAME 78 as tool, so two
+          // different states could not be told apart by position.
+          // Left half = you at the console, right half = the agent.
+          const BALL_POS = { ask: 8, type: 20, sub: 34, idle: 50, think: 52, tool: 68, out: 84, fail: 92 };
           const youLit = curPhase === 'type' || curPhase === 'sub' || curPhase === 'ask';
           const meLit = curPhase === 'think' || curPhase === 'out' || curPhase === 'tool';
           let strip = null;
@@ -1470,6 +1504,41 @@ window.__ModuleLoader__.load({
               }
             }
           }
+          // How alive the core looks. Everything here is real: mid-stream it is
+          // the actual characters-per-second, otherwise the phase itself.
+          const phasePos = (p) => (BALL_POS[p] != null ? BALL_POS[p] : 50);
+          let vital = 0.18;
+          if (curPhase === 'out') vital = Math.min(1, 0.45 + (cpsLive == null ? 0 : cpsLive) / 45);
+          else if (curPhase === 'tool') vital = 0.7;
+          else if (curPhase === 'think') vital = 0.55;
+          else if (curPhase === 'type' || curPhase === 'sub') vital = 0.5;
+          else if (curPhase === 'ask') vital = 0.4;
+          else if (curPhase === 'fail') vital = 0.32;
+
+          // Trail: the last distinct phases actually recorded in the sample
+          // buffer — a memory of where the process has been, not a flourish.
+          const echoRows = [];
+          if (pulse.length > 1) {
+            let prev = curPhase;
+            for (let i = pulse.length - 1; i >= 0 && echoRows.length < 3; i--) {
+              const p = pulse[i].p;
+              if (p === prev) continue;
+              prev = p;
+              echoRows.push({ p: p, pos: phasePos(p) });
+            }
+          }
+          const echoEls = echoRows.map((row, index) =>
+            h('i', {
+              key: 'echo-' + row.p + '-' + index,
+              className: 'dsh-br-ball-echo',
+              style: {
+                left: row.pos + '%',
+                background: PHASE_COLOR[row.p] != null ? PHASE_COLOR[row.p] : '#5b7086',
+                opacity: Math.max(0.08, 0.26 - index * 0.07),
+              },
+            }),
+          );
+
           const flowPanel = h(
             'div',
             { className: 'dsh-br-panel', 'data-grow': '1' },
@@ -1481,11 +1550,17 @@ window.__ModuleLoader__.load({
               h(
                 'span',
                 { className: 'dsh-br-ball-track' },
-                h('i', {
-                  className: 'dsh-br-ball',
-                  'data-p': curPhase,
-                  style: { left: (BALL_POS[curPhase] != null ? BALL_POS[curPhase] : 50) + '%' },
-                }),
+                ...echoEls,
+                h(
+                  'i',
+                  {
+                    className: 'dsh-br-ball',
+                    'data-p': curPhase,
+                    style: { left: phasePos(curPhase) + '%', '--dsh-live': String(vital.toFixed(2)) },
+                  },
+                  h('i', { className: 'dsh-br-ball-halo' }),
+                  h('i', { className: 'dsh-br-ball-core' }, h('i', { className: 'dsh-br-ball-iris' })),
+                ),
               ),
               h('span', { className: 'dsh-br-ball-name', 'data-lit': meLit ? '1' : '0' }, t('me')),
               h('span', { className: 'dsh-br-flow-now', 'data-p': curPhase }, t(curPhase)),

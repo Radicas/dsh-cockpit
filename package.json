@@ -1,6 +1,6 @@
 {
   "name": "dsh-cockpit",
-  "version": "16.4.0",
+  "version": "16.5.0",
   "private": true,
   "type": "module",
   "description": "Futuristic bridge shell for DSH Web: live AI pipeline telemetry (input>reason>generate pulse), context arc, HUD composer, deep-space palette.",
