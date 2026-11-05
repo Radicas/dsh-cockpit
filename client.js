@@ -62,6 +62,36 @@ window.__ModuleLoader__.load({
           (p[2] ? '25%, rgba(223,242,255,.28) 55%' : '35%') + ', transparent 100%)';
       })
       .join(',');
+
+    /** Deterministic static star layer: seeded LCG rolled ONCE at load, frozen
+     *  into a CSS background string. Density biased toward a diagonal galactic
+     *  band. Not random at runtime — a texture, like the hand table above. */
+    function skyField(n, seed, size, aLo, aHi, bandBias) {
+      let s = seed >>> 0;
+      const rnd = function () {
+        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+        return s / 4294967296;
+      };
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        const x = rnd() * 100;
+        let y = rnd() * 100;
+        const band = 12 + x * 0.72;
+        if (Math.abs(y - band) > 26 && rnd() < bandBias) {
+          y = Math.min(99, Math.max(1, band + (rnd() - 0.5) * 20));
+        }
+        const a = (aLo + rnd() * (aHi - aLo)).toFixed(2);
+        out.push('radial-gradient(' + size + ' ' + size + ' at ' + x.toFixed(2) + '% ' + y.toFixed(2) + '%, rgba(223,242,255,' + a + ') 40%, transparent 100%)');
+      }
+      return out.join(',');
+    }
+    const FAR = skyField(70, 0x5f3a91, '1px', 0.1, 0.22, 0.55);
+    const MID = skyField(34, 0x2b7e14, '1.6px', 0.26, 0.45, 0.6);
+    /* Nebulae riding the galactic band + a soft vignette for depth. */
+    const NEB = 'radial-gradient(38% 26% at 22% 24%,rgba(56,130,246,.06),transparent 70%),' +
+      'radial-gradient(30% 22% at 68% 62%,rgba(87,216,255,.05),transparent 70%),' +
+      'radial-gradient(46% 30% at 44% 40%,rgba(120,160,255,.035),transparent 72%),' +
+      'radial-gradient(120% 90% at 50% 50%,transparent 60%,rgba(2,4,8,.5) 100%)';
     const VIOLET = '#8b7cf6';
     const GREEN = '#4ade80';
     const AMBER = '#ffc46b';
@@ -252,7 +282,11 @@ window.__ModuleLoader__.load({
       /* --- frame (root decoration) ------------------------------------- */
       '.dsh-br-frame{position:fixed;inset:0;z-index:60;pointer-events:none;overflow:hidden;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
       '.dsh-br-depth{position:absolute;inset:0;background:radial-gradient(58% 44% at 14% 6%,rgba(56,189,248,.055),transparent 70%),radial-gradient(50% 42% at 88% 94%,rgba(87,216,255,.05),transparent 70%)}',
-      '.dsh-br-stars{position:absolute;inset:0;background:' + STARS + ',radial-gradient(70% 50% at 50% 0%,rgba(56,130,246,.05),transparent 70%)}',
+      '.dsh-br-stars{position:absolute;inset:0;background:' + STARS + '}',
+      '.dsh-br-sky{position:absolute;inset:-95px;will-change:transform;transition:transform 0.5s linear}',
+      '.dsh-br-sky[data-l="neb"]{background:' + NEB + '}',
+      '.dsh-br-sky[data-l="far"]{background:' + FAR + '}',
+      '.dsh-br-sky[data-l="mid"]{background:' + MID + '}',
       '.dsh-br-stars2{position:absolute;inset:0;background:radial-gradient(2.6px 2.6px at 24% 16%,rgba(223,242,255,.85) 30%,transparent 100%),radial-gradient(2.6px 2.6px at 68% 38%,rgba(159,228,255,.8) 30%,transparent 100%),radial-gradient(2.6px 2.6px at 13% 66%,rgba(223,242,255,.75) 30%,transparent 100%),radial-gradient(2.6px 2.6px at 90% 78%,rgba(159,228,255,.7) 30%,transparent 100%),radial-gradient(9px 9px at 24% 16%,rgba(159,228,255,.22) 20%,transparent 100%),radial-gradient(9px 9px at 68% 38%,rgba(159,228,255,.2) 20%,transparent 100%),radial-gradient(9px 9px at 13% 66%,rgba(223,242,255,.18) 20%,transparent 100%),radial-gradient(9px 9px at 90% 78%,rgba(223,242,255,.16) 20%,transparent 100%);animation:dsh-br-breathe 7s ease-in-out infinite}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
@@ -487,23 +521,21 @@ window.__ModuleLoader__.load({
       '.bOPqQW_anchor.bOPqQW_anchor{display:none}',
     ].join('\n');
 
-    // Build-time guard: an unbalanced paren/brace in any rule silently breaks
-    // that declaration and can cascade to following rules. Fail loudly (in dev)
-    // rather than ship a wrecked stylesheet.
-    if (typeof window !== 'undefined' && window.location && /(^|\.)localhost|127\.0\.0\.1/.test(window.location.hostname)) {
-      let bal = 0;
-      let brace = 0;
-      for (let i = 0; i < CSS.length; i++) {
-        const ch = CSS.charAt(i);
-        if (ch === '(') bal++;
-        else if (ch === ')') { bal--; if (bal < 0) break; }
-        else if (ch === '{') brace++;
-        else if (ch === '}') brace--;
-      }
-      if (bal !== 0 || brace !== 0) {
-        // eslint-disable-next-line no-console
-        console.error('[dsh-cockpit] CSS balance error — paren=' + bal + ' brace=' + brace);
-      }
+    // Build-time guard: an unbalanced paren/brace in any rule can break that
+    // declaration and cascade to the following ones. Checked here rather than
+    // tied to a hostname so it covers every page (and any dev host).
+    let bal = 0;
+    let brace = 0;
+    for (let i = 0; i < CSS.length; i++) {
+      const ch = CSS.charAt(i);
+      if (ch === '(') bal++;
+      else if (ch === ')') { bal--; if (bal < 0) break; }
+      else if (ch === '{') brace++;
+      else if (ch === '}') brace--;
+    }
+    if (bal !== 0 || brace !== 0) {
+      // eslint-disable-next-line no-console
+      console.error('[dsh-cockpit] CSS balance error — paren=' + bal + ' brace=' + brace);
     }
 
     const TIME = new Intl.DateTimeFormat('en-GB', {
@@ -694,6 +726,46 @@ window.__ModuleLoader__.load({
           useLocaleRevision();
           const now = useClock();
           const t = ctx.locale.bind(NS);
+          // Parallax: layers drift against the conversation scroll. DOM is
+          // written directly on the shared beat (no React re-render); CSS
+          // easing smooths between beats.
+          const nebRef = useRef(null);
+          const farRef = useRef(null);
+          const midRef = useRef(null);
+          const nearRef = useRef(null);
+          const scrollRef = useRef(0);
+          useEffect(function () {
+            let lastEl = null;
+            const onScroll = function (e) {
+              const tgt = e.target;
+              if (tgt != null && typeof tgt.scrollTop === 'number' && tgt !== document) {
+                lastEl = tgt;
+                scrollRef.current = tgt.scrollTop;
+              } else if (tgt === document || tgt == null) {
+                scrollRef.current = window.scrollY || 0;
+              }
+            };
+            window.addEventListener('scroll', onScroll, true);
+            const un = subscribeBeat(function () {
+              const set = function (ref, f) {
+                const el = ref.current;
+                if (el == null) return;
+                const y = Math.round(Math.max(-90, Math.min(0, scrollRef.current * -f)));
+                if (el.__y !== y) {
+                  el.__y = y;
+                  el.style.transform = 'translate3d(0,' + y + 'px,0)';
+                }
+              };
+              set(nebRef, 0.01);
+              set(farRef, 0.025);
+              set(midRef, 0.055);
+              set(nearRef, 0.095);
+            });
+            return function () {
+              window.removeEventListener('scroll', onScroll, true);
+              un();
+            };
+          }, []);
           return h(
             F,
             null,
@@ -702,8 +774,15 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'dsh-br-frame', 'aria-hidden': 'true' },
               h('i', { className: 'dsh-br-depth' }),
-              h('i', { className: 'dsh-br-stars' }),
-              h('i', { className: 'dsh-br-stars2' }),
+              h('div', { className: 'dsh-br-sky', 'data-l': 'neb', 'aria-hidden': 'true', ref: nebRef }),
+              h('div', { className: 'dsh-br-sky', 'data-l': 'far', 'aria-hidden': 'true', ref: farRef }),
+              h('div', { className: 'dsh-br-sky', 'data-l': 'mid', 'aria-hidden': 'true', ref: midRef }),
+              h(
+                'div',
+                { className: 'dsh-br-sky', 'data-l': 'near', 'aria-hidden': 'true', ref: nearRef },
+                h('i', { className: 'dsh-br-stars' }),
+                h('i', { className: 'dsh-br-stars2' }),
+              ),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'top' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'bottom' }),
               h('i', { className: 'dsh-br-edge', 'data-edge': 'left' }),
