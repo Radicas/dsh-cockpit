@@ -47,56 +47,106 @@ window.__ModuleLoader__.load({
     const AZ_DIM = 'rgba(87,216,255,.30)';
     const AZ_FAINT = 'rgba(87,216,255,.14)';
 
-    /* Static starfield: one fixed, hand-written star table (never re-random,
-       so nothing pretends to measure). [x%, y%, bright]; two brightness tiers.
-       Each token is paren-balanced: rgba(...) closes before `transparent 100%)`. */
-    const STARS = [
+    /* Near-star table: hand-written fixed coords [x%, y%, bright]. Baked into
+       the sky bitmap once at load (see bakeSkyURL) — a texture, never a
+       runtime measurement. Seeded far/mid tiers use a frozen LCG below. */
+    const STARS_T = [
       [17, 8, 1], [42, 14, 0], [71, 6, 0], [88, 19, 1], [9, 27, 0], [63, 23, 0],
       [34, 31, 1], [80, 34, 0], [25, 44, 0], [55, 49, 1], [5, 55, 0], [72, 57, 0],
       [94, 52, 0], [40, 63, 0], [12, 71, 1], [60, 76, 0], [85, 73, 0], [28, 83, 0],
       [48, 88, 1], [77, 90, 0], [6, 95, 0], [92, 86, 0],
-    ]
-      .map(function (p) {
-        return 'radial-gradient(' + (p[2] ? '2.4px 2.4px' : '1.5px 1.5px') + ' at ' +
-          p[0] + '% ' + p[1] + '%, rgba(223,242,255,' + (p[2] ? '.9' : '.5') + ') ' +
-          (p[2] ? '25%, rgba(223,242,255,.28) 55%' : '35%') + ', transparent 100%)';
-      })
-      .join(',');
+    ];
 
-    /** Deterministic static star layer: seeded LCG rolled ONCE at load, frozen
-     *  into a CSS background string. Density biased toward a diagonal galactic
-     *  band. Not random at runtime — a texture, like the hand table above. */
-    function skyField(n, seed, size, aLo, aHi, bandBias) {
-      let s = seed >>> 0;
-      const rnd = function () {
-        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
-        return s / 4294967296;
-      };
-      const out = [];
-      for (let i = 0; i < n; i++) {
-        const x = rnd() * 100;
-        let y = rnd() * 100;
-        const band = 12 + x * 0.72;
-        if (Math.abs(y - band) > 26 && rnd() < bandBias) {
-          y = Math.min(99, Math.max(1, band + (rnd() - 0.5) * 20));
-        }
-        const a = (aLo + rnd() * (aHi - aLo)).toFixed(2);
-        out.push('radial-gradient(' + size + ' ' + size + ' at ' + x.toFixed(2) + '% ' + y.toFixed(2) + '%, rgba(223,242,255,' + a + ') 40%, transparent 100%)');
+    /** Bake the whole sky into ONE bitmap (base wash, three nebulae, vignette,
+     *  seeded far/mid tiers, hand near-stars) and hand it to CSS via
+     *  --dsh-sky. Rationale: 131 live gradient layers re-raster across a Retina
+     *  viewport and dominate paint; a frozen image is one texture upload and
+     *  a single blit. Runs once per page, off the critical path. */
+    function bakeSkyURL() {
+      const cv = document.createElement('canvas');
+      const W = (cv.width = 2048);
+      const H = (cv.height = 1152);
+      const g = cv.getContext('2d');
+      if (g == null) return '';
+      const S = W / 1440;
+      const base = g.createLinearGradient(0, H, 0, 0);
+      base.addColorStop(0, '#050b16');
+      base.addColorStop(1, '#03060c');
+      g.fillStyle = base;
+      g.fillRect(0, 0, W, H);
+      const nebs = [
+        [0.22, 0.24, 0.38, 0.26, '56,130,246', 0.09],
+        [0.68, 0.62, 0.3, 0.22, '87,216,255', 0.075],
+        [0.44, 0.4, 0.46, 0.3, '120,160,255', 0.055],
+      ];
+      for (let i = 0; i < nebs.length; i++) {
+        const q = nebs[i];
+        const rx = (q[2] * W) / 2;
+        const ry = (q[3] * H) / 2;
+        g.save();
+        g.translate(q[0] * W, q[1] * H);
+        g.scale(1, ry / rx);
+        const rg = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+        rg.addColorStop(0, 'rgba(' + q[4] + ',' + q[5] + ')');
+        rg.addColorStop(1, 'rgba(' + q[4] + ',0)');
+        g.fillStyle = rg;
+        g.beginPath();
+        g.arc(0, 0, rx, 0, Math.PI * 2);
+        g.fill();
+        g.restore();
       }
-      return out.join(',');
+      const vg = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.72);
+      vg.addColorStop(0, 'rgba(2,4,8,0)');
+      vg.addColorStop(0.6, 'rgba(2,4,8,0)');
+      vg.addColorStop(1, 'rgba(2,4,8,.5)');
+      g.fillStyle = vg;
+      g.fillRect(0, 0, W, H);
+      const tier = function (n, seed, aLo, aHi, r, bias) {
+        let s = seed >>> 0;
+        const rnd = function () {
+          s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+          return s / 4294967296;
+        };
+        g.fillStyle = '#dff2ff';
+        for (let i = 0; i < n; i++) {
+          const px = rnd() * 100;
+          let py = rnd() * 100;
+          const band = 12 + px * 0.72;
+          if (Math.abs(py - band) > 26 && rnd() < bias) py = Math.min(99, Math.max(1, band + (rnd() - 0.5) * 20));
+          g.globalAlpha = aLo + rnd() * (aHi - aLo);
+          g.beginPath();
+          g.arc((px / 100) * W, (py / 100) * H, r * S, 0, Math.PI * 2);
+          g.fill();
+        }
+      };
+      tier(70, 0x5f3a91, 0.1, 0.22, 0.5, 0.55);
+      tier(34, 0x2b7e14, 0.26, 0.45, 0.8, 0.6);
+      for (let i = 0; i < STARS_T.length; i++) {
+        const p = STARS_T[i];
+        const x = (p[0] / 100) * W;
+        const y = (p[1] / 100) * H;
+        if (p[2]) {
+          const rg = g.createRadialGradient(x, y, 0, x, y, 4.5 * S);
+          rg.addColorStop(0, 'rgba(223,242,255,.9)');
+          rg.addColorStop(0.35, 'rgba(223,242,255,.35)');
+          rg.addColorStop(1, 'rgba(223,242,255,0)');
+          g.globalAlpha = 1;
+          g.fillStyle = rg;
+          g.beginPath();
+          g.arc(x, y, 4.5 * S, 0, Math.PI * 2);
+          g.fill();
+        } else {
+          g.globalAlpha = 0.5;
+          g.fillStyle = '#dff2ff';
+          g.beginPath();
+          g.arc(x, y, 0.75 * S, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+      g.globalAlpha = 1;
+      return cv.toDataURL('image/png');
     }
-    const FAR = skyField(70, 0x5f3a91, '1px', 0.1, 0.22, 0.55);
-    const MID = skyField(34, 0x2b7e14, '1.6px', 0.26, 0.45, 0.6);
-    /* Nebulae riding the galactic band + a soft vignette for depth. */
-    const NEB = 'radial-gradient(38% 26% at 22% 24%,rgba(56,130,246,.09),transparent 70%),' +
-      'radial-gradient(30% 22% at 68% 62%,rgba(87,216,255,.075),transparent 70%),' +
-      'radial-gradient(46% 30% at 44% 40%,rgba(120,160,255,.055),transparent 72%),' +
-      'radial-gradient(120% 90% at 50% 50%,transparent 60%,rgba(2,4,8,.5) 100%)';
-    const VIOLET = '#8b7cf6';
-    const GREEN = '#4ade80';
-    const AMBER = '#ffc46b';
-    const ICE = '#dff2ff';
-    const STEEL = 'rgba(148,183,208,.72)';
+
     const PANEL = 'linear-gradient(180deg,rgba(9,19,32,.82),rgba(5,11,20,.9))';
     const HAIR = '1px solid rgba(87,216,255,.26)';
 
@@ -286,7 +336,7 @@ window.__ModuleLoader__.load({
          own background with fixed attachment — text and bubbles always render
          above their own background (no stacking gamble), the view outside the
          window stays put while the cabin scrolls. */
-      '.wSkVaW_root.wSkVaW_root{background:' + NEB + ',' + FAR + ',' + MID + ',' + STARS + ',linear-gradient(0deg,#050b16,#03060c)}',
+      '.wSkVaW_root.wSkVaW_root{background-color:#04070d;background-image:var(--dsh-sky,linear-gradient(0deg,#050b16,#03060c));background-size:cover;background-position:center;background-repeat:no-repeat}',
       '.wSkVaW_root[data-phase=active] .wSkVaW_composerSeat.wSkVaW_composerSeat{background:linear-gradient(180deg,rgba(4,8,15,0) 0px,rgba(4,8,15,.82) 44px)}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
@@ -512,8 +562,8 @@ window.__ModuleLoader__.load({
       '.uV2eYG_pending.uV2eYG_pending{background:' + AZ + '}',
       '.uV2eYG_dock.uV2eYG_dock{flex-wrap:wrap;row-gap:6px}',
       '.uV2eYG_retry.uV2eYG_retry{border-radius:4px;border-color:rgba(87,216,255,.4);color:#a5c0d6}',
-      '.Sixlwa_bubble.Sixlwa_bubble{border-radius:8px 8px 8px 2px;border:1px solid rgba(87,216,255,.16);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 76%,rgba(87,216,255,.10)),color-mix(in srgb,var(--dsw-specific-bubble) 78%,transparent));box-shadow:0 2px 12px rgba(0,0,0,.16)}',
-      '.Sixlwa_userStack .Sixlwa_bubble{border-radius:8px 8px 2px 8px;border-color:rgba(87,216,255,.42);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 62%,rgba(87,216,255,.26)),color-mix(in srgb,var(--dsw-specific-bubble) 70%,rgba(87,216,255,.14)));box-shadow:0 2px 14px rgba(2,10,20,.28),inset 0 0 18px rgba(56,189,248,.05)}',
+      '.Sixlwa_bubble.Sixlwa_bubble{border-radius:8px 8px 8px 2px;border:1px solid rgba(87,216,255,.16);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 84%,rgba(87,216,255,.10)),color-mix(in srgb,var(--dsw-specific-bubble) 86%,transparent));box-shadow:0 2px 12px rgba(0,0,0,.16)}',
+      '.Sixlwa_userStack .Sixlwa_bubble{border-radius:8px 8px 2px 8px;border-color:rgba(87,216,255,.42);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 72%,rgba(87,216,255,.26)),color-mix(in srgb,var(--dsw-specific-bubble) 78%,rgba(87,216,255,.14)));box-shadow:0 2px 14px rgba(2,10,20,.28),inset 0 0 18px rgba(56,189,248,.05)}',
       '.JObwrW_fill.JObwrW_fill{stroke:' + AZ + '}',
       '.JObwrW_track.JObwrW_track{stroke:rgba(87,216,255,.18)}',
       '.JObwrW_trigger.JObwrW_trigger{color:#8fa9c2}',
@@ -557,16 +607,18 @@ window.__ModuleLoader__.load({
      *  leaves. Replaces per-component 70/200/1000ms timers (v13). */
     let beatTimer = null;
     const beatListeners = new Set();
+    function startBeat() {
+      if (beatTimer != null || typeof document === 'undefined' || document.hidden) return;
+      beatTimer = setInterval(() => {
+        const now = Date.now();
+        for (const f of Array.from(beatListeners)) {
+          try { f(now); } catch (err) {}
+        }
+      }, 70);
+    }
     function subscribeBeat(fn) {
       beatListeners.add(fn);
-      if (beatTimer == null) {
-        beatTimer = setInterval(() => {
-          const now = Date.now();
-          for (const f of Array.from(beatListeners)) {
-            try { f(now); } catch (err) {}
-          }
-        }, 70);
-      }
+      startBeat();
       return () => {
         beatListeners.delete(fn);
         if (beatListeners.size === 0 && beatTimer != null) {
@@ -574,6 +626,18 @@ window.__ModuleLoader__.load({
           beatTimer = null;
         }
       };
+    }
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+          if (beatTimer != null) {
+            clearInterval(beatTimer);
+            beatTimer = null;
+          }
+        } else if (beatListeners.size > 0) {
+          startBeat();
+        }
+      });
     }
 
     /** Scroll the newest DOM node matching `sel` into view. Real host anchors:
@@ -1669,6 +1733,20 @@ window.__ModuleLoader__.load({
             ctx.slots.register({ name: 'conversation.hero.brand.mark' }, safe(HeroEmblem)),
           ),
         );
+
+        // Bake the frozen sky bitmap once, off the critical path, and hand it
+        // to CSS (--dsh-sky). The root rule already paints a cheap solid base
+        // so there is no flash and no live-gradient jank if this never lands.
+        try {
+          if (typeof setTimeout === 'function' && typeof document !== 'undefined') {
+            setTimeout(function () {
+              try {
+                const url = bakeSkyURL();
+                if (url !== '') document.documentElement.style.setProperty('--dsh-sky', 'url("' + url + '")');
+              } catch (err) {}
+            }, 120);
+          }
+        } catch (err) {}
       },
     };
     } catch (err) {
