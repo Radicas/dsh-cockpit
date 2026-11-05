@@ -52,17 +52,55 @@ window.__ModuleLoader__.load({
     const ICE = '#dff2ff';
     const STEEL = 'rgba(148,183,208,.72)';
 
-    /* Cabin cursor: a small targeting reticle, drawn once as an SVG data URI.
-       Hotspot sits on the centre dot. If a CSP blocks data: cursors the whole
-       thing degrades to the platform arrow — no layout risk either way. */
-    const CURSOR_SVG =
-      '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">' +
+    /* Cabin cursor family: one 26px canvas, one cyan palette, one hotspot rule
+       (centre = where the click lands). Each state keeps its native meaning —
+       only the artwork changes — so nothing about pointing or typing gets
+       surprising. Parens are hand-encoded because encodeURIComponent leaves
+       them raw and the CSS balance guard counts them. */
+    function curArt(inner) {
+      return 'url("data:image/svg+xml,' +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">' + inner + '</svg>',
+        ).replace(/\(/g, '%28').replace(/\)/g, '%29') +
+        '") 13 13';
+    }
+    // aim: ring + centre bead + four ticks — the resting state
+    const CUR_AIM = curArt(
       '<circle cx="13" cy="13" r="7.5" fill="none" stroke="#57d8ff" stroke-opacity=".5" stroke-width="1"/>' +
-      '<circle cx="13" cy="13" r="1.15" fill="#57d8ff" fill-opacity=".95"/>' +
-      '<path d="M13 1.6v4M13 20.4v4M1.6 13h4M20.4 13h4" stroke="#57d8ff" stroke-opacity=".45" ' +
-      'stroke-width="1" stroke-linecap="round"/>' +
-      '</svg>';
-    const CUR_AIM = 'url("data:image/svg+xml,' + encodeURIComponent(CURSOR_SVG) + '") 13 13';
+        '<circle cx="13" cy="13" r="1.15" fill="#57d8ff" fill-opacity=".95"/>' +
+        '<path d="M13 1.6v4M13 20.4v4M1.6 13h4M20.4 13h4" stroke="#57d8ff" stroke-opacity=".45" ' +
+        'stroke-width="1" stroke-linecap="round"/>',
+    );
+    // pointer: four corner brackets — "this one you can hit"
+    const CUR_PTR = curArt(
+      '<path d="M6 9.5V6h3.5M20 9.5V6h-3.5M6 16.5V20h3.5M20 16.5V20h-3.5" fill="none" ' +
+        'stroke="#57d8ff" stroke-opacity=".85" stroke-width="1.4" stroke-linecap="round"/>' +
+        '<circle cx="13" cy="13" r="1.2" fill="#57d8ff" fill-opacity=".95"/>',
+    );
+    // text: an I-beam with serif ticks — insertion point stays obvious
+    const CUR_TEXT = curArt(
+      '<path d="M13 5v16" stroke="#57d8ff" stroke-opacity=".85" stroke-width="1.2"/>' +
+        '<path d="M9.5 5h7M9.5 21h7" stroke="#57d8ff" stroke-opacity=".6" stroke-width="1.2" ' +
+        'stroke-linecap="round"/>',
+    );
+    // resize: the split rail with chevrons
+    const CUR_RESIZE = curArt(
+      '<path d="M13 7v12" stroke="#57d8ff" stroke-opacity=".8" stroke-width="1.2"/>' +
+        '<path d="M9.5 13h-6M9.5 13l3-3M9.5 13l3 3M16.5 13h6M16.5 13l-3-3M16.5 13l-3 3" ' +
+        'fill="none" stroke="#57d8ff" stroke-opacity=".75" stroke-width="1.2" stroke-linecap="round"/>',
+    );
+    // disabled: the same ring, struck through and dimmed
+    const CUR_NO = curArt(
+      '<circle cx="13" cy="13" r="7.5" fill="none" stroke="#8fa9c2" stroke-opacity=".45" stroke-width="1"/>' +
+        '<path d="M8.2 17.8L17.8 8.2" stroke="#8fa9c2" stroke-opacity=".75" stroke-width="1.2"/>' +
+        '<circle cx="13" cy="13" r="1" fill="#8fa9c2" fill-opacity=".6"/>',
+    );
+    // inspect: dashed ring — used where hovering explains a value
+    const CUR_INSPECT = curArt(
+      '<circle cx="13" cy="13" r="7.5" fill="none" stroke="#57d8ff" stroke-opacity=".55" ' +
+        'stroke-width="1" stroke-dasharray="3 3"/>' +
+        '<circle cx="13" cy="13" r="1.15" fill="#57d8ff" fill-opacity=".9"/>',
+    );
 
     /* Near-star table: hand-written fixed coords [x%, y%, bright]. Baked into
        the sky bitmap once at load (see bakeSkyURL) — a texture, never a
@@ -357,11 +395,16 @@ window.__ModuleLoader__.load({
          own background with fixed attachment — text and bubbles always render
          above their own background (no stacking gamble), the view outside the
          window stays put while the cabin scrolls. */
-      '.wSkVaW_root.wSkVaW_root{cursor:' + CUR_AIM + ',auto}',
-      /* typing surfaces keep the I-beam; clickable keeps the hand */
-      '.wSkVaW_root textarea,.wSkVaW_root input,.wSkVaW_root .uV2eYG_input{cursor:text}',
-      '.wSkVaW_root [contenteditable="true"]{cursor:text}',
-      '.wSkVaW_root button:not(:disabled),.wSkVaW_root a,.wSkVaW_root [role="button"]{cursor:pointer}',
+      '.wSkVaW_root.wSkVaW_root,.dsh-br-inst,.dsh-br-panel{cursor:' + CUR_AIM + ',auto}',
+      '.wSkVaW_root textarea,.wSkVaW_root input,.wSkVaW_root .uV2eYG_input,' +
+        '.dsh-br-inst textarea,.dsh-br-inst input{cursor:' + CUR_TEXT + ',text}',
+      '.wSkVaW_root [contenteditable="true"]{cursor:' + CUR_TEXT + ',text}',
+      '.wSkVaW_root button:not(:disabled),.dsh-br-inst button:not(:disabled),' +
+        '.wSkVaW_root a,.wSkVaW_root [role="button"]{cursor:' + CUR_PTR + ',pointer}',
+      '.wSkVaW_root button:disabled,.dsh-br-inst button:disabled,' +
+        '.wSkVaW_root [aria-disabled="true"]{cursor:' + CUR_NO + ',not-allowed}',
+      '.wSkVaW_widthHandle{cursor:' + CUR_RESIZE + ',col-resize}',
+      '.dsh-br-arc,.dsh-br-arc-hit{cursor:' + CUR_INSPECT + ',help}',
       /* host pins a plain arrow on these two; let them inherit the reticle */
       '.wSkVaW_root .wSkVaW_crumbCurrent,.JObwrW_panel{cursor:inherit}',
       '.wSkVaW_root.wSkVaW_root{background-color:#04070d;background-image:var(--dsh-sky,linear-gradient(0deg,#050b16,#03060c));background-size:cover;background-position:center;background-repeat:no-repeat}',
@@ -408,7 +451,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-live-led[data-live="input"]{background:' + AMBER + ';box-shadow:0 0 10px rgba(255,196,107,.95);animation:dsh-br-pulse .8s ease-in-out infinite}',
       '.dsh-br-live-led[data-live="fault"],.dsh-br-live-led[data-live="halted"]{background:#ff6b6b;box-shadow:0 0 10px rgba(255,107,107,.95);animation:dsh-br-pulse .7s ease-in-out infinite}',
       '.dsh-br-live-state[data-live="fault"],.dsh-br-live-state[data-live="halted"]{color:#ff9d9d}',
-      '.dsh-br-failrow{color:#ff9d9d;cursor:help}',
+      '.dsh-br-failrow{color:#ff9d9d;cursor:' + CUR_INSPECT + ',help}',
       '.dsh-br-failrow b{color:#ffbaba;font-weight:600;font-variant-numeric:tabular-nums}',
       '.dsh-br-jump[data-k="latest"][data-unread="true"]{animation:dsh-br-pulse .9s ease-in-out infinite;border-color:rgba(87,216,255,.9);background:rgba(87,216,255,.22);color:#dff2ff}',
       '.dsh-br-live-state{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:' + STEEL + '}',
@@ -481,12 +524,11 @@ window.__ModuleLoader__.load({
 
       /* interaction: real jump buttons + hover precision tooltips */
       '.dsh-br-panel{pointer-events:auto}',
-      '.dsh-br-jump{flex:none;cursor:pointer;font:inherit;font-size:7.5px;letter-spacing:.16em;padding:2px 7px;border:1px solid rgba(255,196,107,.45);background:rgba(255,196,107,.08);color:#ffd79a;transition:background .18s ease,border-color .18s ease}',
+      '.dsh-br-jump{flex:none;cursor:' + CUR_PTR + ',pointer;font:inherit;font-size:7.5px;letter-spacing:.16em;padding:2px 7px;border:1px solid rgba(255,196,107,.45);background:rgba(255,196,107,.08);color:#ffd79a;transition:background .18s ease,border-color .18s ease}',
       '.dsh-br-jump:hover{background:rgba(255,196,107,.22);border-color:rgba(255,196,107,.9)}',
       '.dsh-br-jump[data-k="latest"]{border-color:rgba(87,216,255,.32);background:rgba(87,216,255,.06);color:#9fe4ff}',
       '.dsh-br-jump[data-k="latest"]:hover{background:rgba(87,216,255,.16);border-color:rgba(87,216,255,.7)}',
-      '.dsh-br-urow{cursor:help}',
-      '.dsh-br-arc{cursor:help}',
+      '.dsh-br-urow,.dsh-br-trow{cursor:' + CUR_INSPECT + ',help}',
       '[data-approval-key].dsh-br-flash,[data-turn-tail].dsh-br-flash{animation:dsh-br-flashring 1.6s ease}',
       '@keyframes dsh-br-flashring{0%,55%{box-shadow:0 0 0 1px rgba(255,196,107,.75),0 0 22px rgba(255,196,107,.3)}100%{box-shadow:none}}',
       '.dsh-br-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:8px;letter-spacing:.3em;color:rgba(148,183,208,.4)}',
@@ -501,7 +543,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-arc-seg[data-k="sys"]{stroke:#6d8ba3;filter:drop-shadow(0 0 4px rgba(109,139,163,.4))}',
       '.dsh-br-arc-seg[data-k="tools"]{stroke:' + VIOLET + ';filter:drop-shadow(0 0 4px rgba(139,124,246,.45))}',
       '.dsh-br-arc-seg[data-k="msg"]{stroke:' + AZ + ';filter:drop-shadow(0 0 5px rgba(87,216,255,.5))}',
-      '.dsh-br-arc-hit{fill:none;stroke:transparent;stroke-width:18;stroke-linecap:butt;pointer-events:stroke;cursor:help}',
+      '.dsh-br-arc-hit{fill:none;stroke:transparent;stroke-width:18;stroke-linecap:butt;pointer-events:stroke}',
       '.dsh-br-arc-sub[data-hover="true"]{letter-spacing:.1em}',
       '.dsh-br-arc-pct{font-size:20px;color:' + ICE + ';font-variant-numeric:tabular-nums;letter-spacing:.04em}',
       '.dsh-br-arc-pct[data-hot="true"]{color:#ffd79a}',
