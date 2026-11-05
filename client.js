@@ -380,6 +380,9 @@ window.__ModuleLoader__.load({
     const CSS = [
       '@keyframes dsh-br-spin{to{transform:rotate(360deg)}}',
       '@keyframes dsh-br-pulse{0%,100%{opacity:.35}50%{opacity:1}}',
+      '@keyframes dsh-br-keysweep{to{transform:rotate(360deg)}}',
+      '@keyframes dsh-br-emit{0%{transform:scale(.78);opacity:.85}100%{transform:scale(1.75);opacity:0}}',
+      '@keyframes dsh-br-coredraw{0%,100%{opacity:.72}50%{opacity:1}}',
       '@keyframes dsh-br-eq{0%,100%{transform:scaleY(.16)}50%{transform:scaleY(1)}}',
       '@keyframes dsh-br-caret{0%,55%{opacity:1}56%,100%{opacity:0}}',
       '@keyframes dsh-br-breathe{0%,100%{opacity:.55}50%{opacity:1}}',
@@ -702,56 +705,83 @@ window.__ModuleLoader__.load({
       '.uV2eYG_card.uV2eYG_card:before{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;opacity:.6;background:linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/1px 9px no-repeat}',
       '.uV2eYG_input.uV2eYG_input{caret-color:' + AZ + '}',
       '.uV2eYG_placeholder.uV2eYG_placeholder{color:#7e97ae}',
-      /* Console keys: the send and voice buttons share one geometry (octagon,
-         same bevel language as the panels) and differ only in channel colour.
-         Every visual state here is a REAL host state — `:disabled` is exactly
-         "draft empty", `[aria-haspopup="dialog"]` is exactly "voice not
-         configured", and the recording pulse hangs off the voice plugin's own
-         data-voice-activity attribute. Nothing is animated on a guess. */
-      '.uV2eYG_primary.uV2eYG_primary{width:36px;height:36px;padding:0;border-radius:0;' +
-        'clip-path:polygon(26% 0,74% 0,100% 26%,100% 74%,74% 100%,26% 100%,0 74%,0 26%);' +
-        'background:linear-gradient(155deg,#a8f0ff,#4fc6f0 46%,#1f86bd);color:#03121d;' +
-        'box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 0 12px rgba(255,255,255,.22);' +
-        'filter:drop-shadow(0 0 8px rgba(87,216,255,.6));transform:translateY(-2px);' +
-        'transition:filter .16s ease,transform .1s ease}',
-      '.uV2eYG_primary.uV2eYG_primary svg{width:17px;height:17px}',
-      '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled){' +
-        'filter:brightness(1.1) saturate(1.05) drop-shadow(0 0 14px rgba(87,216,255,.95));' +
-        'box-shadow:inset 0 1px 0 rgba(255,255,255,.6),inset 0 0 14px rgba(255,255,255,.3)}',
-      '.uV2eYG_primary.uV2eYG_primary:active:not(:disabled){transform:translateY(-1px) scale(.93);filter:brightness(.92) drop-shadow(0 0 6px rgba(87,216,255,.5))}',
+      /* ── Console keys v16.11 ──────────────────────────────────────────────
+         Two behaviours instead of two shapes.
+
+         SEND is a charging core: a dark hexagon socket whose rim arc is driven
+         by the REAL draft length (input.draft) through --dsh-charge, so writing
+         literally charges the key. Nothing else feeds the arc; an empty draft
+         leaves it dark. Hover spins a light around the rim, press collapses it.
+
+         VOICE is an emitter: violet socket that turns amber when the host says
+         the feature is unconfigured (aria-haspopup=dialog), and emits expanding
+         rings while the plugin reports data-voice-activity="recording" — the
+         waveform beside it is the plugin's own real-amplitude SVG, only recoloured.
+
+         Outer light uses drop-shadow: clip-path would cut a box-shadow. */
+      '.uV2eYG_primary.uV2eYG_primary{position:relative;width:38px;height:38px;padding:0;border-radius:0;overflow:visible;' +
+        'clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);' +
+        'background:radial-gradient(circle at 50% 44%,#0e2338,#050d16 74%);color:#5d7d96;' +
+        'box-shadow:inset 0 0 0 1px rgba(87,216,255,.26),inset 0 0 14px rgba(4,18,30,.9);' +
+        'filter:drop-shadow(0 0 3px rgba(87,216,255,.22));transform:translateY(-2px);' +
+        'transition:color .22s ease,box-shadow .22s ease,filter .22s ease,transform .1s ease}',
+      /* the charge arc — length == real draft progress, not a decoration */
+      '.uV2eYG_primary.uV2eYG_primary::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;' +
+        'background:conic-gradient(from -90deg,#8fe9ff calc(var(--dsh-charge,0) * 1turn),rgba(87,216,255,.09) 0);' +
+        '-webkit-mask:radial-gradient(closest-side,transparent 64%,#000 67%);' +
+        'mask:radial-gradient(closest-side,transparent 64%,#000 67%)}',
+      '.uV2eYG_primary.uV2eYG_primary::after{content:"";position:absolute;inset:-2px;z-index:0;pointer-events:none;opacity:0;' +
+        'background:conic-gradient(from 0deg,transparent 0 72%,rgba(205,246,255,.95) 86%,transparent 94%);' +
+        '-webkit-mask:radial-gradient(closest-side,transparent 60%,#000 65%);' +
+        'mask:radial-gradient(closest-side,transparent 60%,#000 65%);transition:opacity .2s ease}',
+      '.uV2eYG_primary.uV2eYG_primary>svg{position:relative;z-index:1;width:16px;height:16px;transition:filter .2s ease}',
+      '.uV2eYG_primary.uV2eYG_primary:not(:disabled){color:#dff2ff;' +
+        'box-shadow:inset 0 0 0 1px rgba(87,216,255,.85),inset 0 0 18px rgba(47,159,216,.35);' +
+        'filter:drop-shadow(0 0 9px rgba(87,216,255,.7))}',
+      '.uV2eYG_primary.uV2eYG_primary:not(:disabled)>svg{filter:drop-shadow(0 0 6px rgba(160,240,255,.95))}',
+      '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled)::after{opacity:1;animation:dsh-br-keysweep 2.2s linear infinite}',
+      '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled){color:#fff;' +
+        'box-shadow:inset 0 0 0 1px rgba(140,235,255,1),inset 0 0 22px rgba(87,216,255,.45);' +
+        'filter:drop-shadow(0 0 14px rgba(87,216,255,.95))}',
+      '.uV2eYG_primary.uV2eYG_primary:active:not(:disabled){transform:translateY(-1px) scale(.9);' +
+        'filter:brightness(1.15) drop-shadow(0 0 18px rgba(160,240,255,1))}',
       '.uV2eYG_primary.uV2eYG_primary:focus-visible{outline:none;' +
-        'filter:brightness(1.15) drop-shadow(0 0 0 rgba(0,0,0,0)) drop-shadow(0 0 12px rgba(87,216,255,1))}',
-      /* empty draft: a designed "unarmed" key, not a faded copy of the armed one */
-      '.uV2eYG_primary.uV2eYG_primary:disabled{opacity:1;transform:translateY(-2px);filter:none;' +
-        'background:linear-gradient(155deg,rgba(87,216,255,.14),rgba(31,134,189,.08));' +
-        'color:rgba(148,183,208,.5);box-shadow:inset 0 0 0 1px rgba(87,216,255,.22)}',
-      /* voice key — violet channel */
-      '.ddpbLW_trigger.ddpbLW_trigger{width:32px;height:32px;padding:0;border-radius:0;' +
-        'clip-path:polygon(25% 0,75% 0,100% 25%,100% 75%,75% 100%,25% 100%,0 75%,0 25%);' +
-        'background:linear-gradient(155deg,rgba(179,165,255,.26),rgba(87,216,255,.10));' +
-        'color:#cfc6ff;box-shadow:inset 0 0 0 1px rgba(139,124,246,.55);' +
-        'filter:drop-shadow(0 0 6px rgba(139,124,246,.4));' +
-        'transition:filter .16s ease,box-shadow .16s ease,background .16s ease,color .16s ease,transform .1s ease}',
-      '.ddpbLW_trigger.ddpbLW_trigger svg{width:17px;height:17px}',
-      '.ddpbLW_trigger.ddpbLW_trigger:hover:not(:disabled){' +
-        'background:linear-gradient(155deg,rgba(179,165,255,.42),rgba(87,216,255,.2));color:#e8e2ff;' +
-        'box-shadow:inset 0 0 0 1px rgba(139,124,246,.9);' +
-        'filter:brightness(1.12) drop-shadow(0 0 12px rgba(139,124,246,.8))}',
-      '.ddpbLW_trigger.ddpbLW_trigger:active:not(:disabled){transform:scale(.93)}',
+        'box-shadow:inset 0 0 0 2px rgba(140,235,255,1),inset 0 0 22px rgba(87,216,255,.4)}',
+      '.uV2eYG_primary.uV2eYG_primary:disabled{opacity:1;transform:translateY(-2px);color:#4a6478;' +
+        'box-shadow:inset 0 0 0 1px rgba(87,216,255,.16),inset 0 0 14px rgba(4,18,30,.9);' +
+        'filter:drop-shadow(0 0 2px rgba(87,216,255,.15))}',
+      /* voice emitter */
+      '.ddpbLW_triggerAnchor.ddpbLW_triggerAnchor{position:relative;flex:none;display:inline-flex}',
+      '.ddpbLW_trigger.ddpbLW_trigger{position:relative;width:32px;height:32px;padding:0;border-radius:0;overflow:visible;' +
+        'clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);' +
+        'background:radial-gradient(circle at 50% 44%,#181233,#070b16 74%);color:#a99cf0;' +
+        'box-shadow:inset 0 0 0 1px rgba(139,124,246,.4),inset 0 0 12px rgba(6,10,22,.9);' +
+        'filter:drop-shadow(0 0 3px rgba(139,124,246,.25));' +
+        'transition:color .2s ease,box-shadow .2s ease,filter .2s ease,transform .1s ease}',
+      '.ddpbLW_trigger.ddpbLW_trigger>svg{position:relative;z-index:1;width:16px;height:16px}',
+      '.ddpbLW_trigger.ddpbLW_trigger:hover:not(:disabled){color:#e4dcff;' +
+        'box-shadow:inset 0 0 0 1px rgba(160,145,255,.9),inset 0 0 16px rgba(139,124,246,.3);' +
+        'filter:drop-shadow(0 0 10px rgba(139,124,246,.8))}',
+      '.ddpbLW_trigger.ddpbLW_trigger:active:not(:disabled){transform:scale(.92)}',
       '.ddpbLW_trigger.ddpbLW_trigger:focus-visible{outline:none;' +
-        'box-shadow:inset 0 0 0 1px rgba(139,124,246,.95);' +
-        'filter:drop-shadow(0 0 10px rgba(139,124,246,1))}',
-      '.ddpbLW_trigger.ddpbLW_trigger:disabled{background:rgba(139,124,246,.06);filter:none;' +
-        'color:rgba(148,183,208,.45);box-shadow:inset 0 0 0 1px rgba(139,124,246,.22)}',
-      /* opens a setup dialog instead of recording = not configured yet */
+        'box-shadow:inset 0 0 0 2px rgba(160,145,255,1),inset 0 0 16px rgba(139,124,246,.35)}',
+      '.ddpbLW_trigger.ddpbLW_trigger:disabled{background:radial-gradient(circle at 50% 44%,#111827,#06090f 74%);' +
+        'color:#4d5a6b;box-shadow:inset 0 0 0 1px rgba(139,124,246,.16);filter:none}',
+      /* host says: this opens a setup dialog, so the feature is not configured */
       '.ddpbLW_trigger.ddpbLW_trigger[aria-haspopup="dialog"]{color:#ffd79a;' +
-        'box-shadow:inset 0 0 0 1px rgba(255,196,107,.6);' +
-        'filter:drop-shadow(0 0 8px rgba(255,196,107,.5))}',
-      /* real recording state, straight off the voice plugin's own attribute */
-      '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_trigger{' +
-        'color:#fff;box-shadow:inset 0 0 0 1px rgba(255,196,107,.95);' +
-        'filter:drop-shadow(0 0 14px rgba(255,196,107,.9));' +
-        'animation:dsh-br-pulse 1.05s ease-in-out infinite}',
+        'box-shadow:inset 0 0 0 1px rgba(255,196,107,.55),inset 0 0 12px rgba(255,196,107,.12);' +
+        'filter:drop-shadow(0 0 7px rgba(255,196,107,.45))}',
+      /* real recording state → emission rings + hot socket */
+      '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_triggerAnchor::after{content:"";' +
+        'position:absolute;inset:0;pointer-events:none;border-radius:50%;' +
+        'border:1px solid rgba(255,196,107,.8);animation:dsh-br-emit 1.6s ease-out infinite}',
+      '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_trigger{color:#fff;' +
+        'box-shadow:inset 0 0 0 1px rgba(255,196,107,.95),inset 0 0 16px rgba(255,196,107,.25);' +
+        'filter:drop-shadow(0 0 12px rgba(255,196,107,.9))}',
+      /* the plugin's real-amplitude waveform and level bars, recoloured only */
+      '.ddpbLW_waveform{color:#c9bfff;filter:drop-shadow(0 0 6px rgba(139,124,246,.65))}',
+      '.ddpbLW_inputLevel>span{background:rgba(139,124,246,.35);border-radius:1px}',
+      '.ddpbLW_inputLevel>span[data-active="true"]{background:#b3a5ff;box-shadow:0 0 6px rgba(139,124,246,.9)}',
       '.uV2eYG_add.uV2eYG_add{border-radius:5px;background:rgba(87,216,255,.07);border:1px solid rgba(87,216,255,.30);color:' + AZ + ';box-shadow:inset 0 0 10px rgba(56,189,248,.06)}',
       '.uV2eYG_add.uV2eYG_add:hover:not(:disabled){background:rgba(87,216,255,.16)}',
       '.uV2eYG_select.uV2eYG_select{color:#a5c0d6;border-radius:4px;border:1px solid transparent}',
@@ -1070,6 +1100,13 @@ window.__ModuleLoader__.load({
             }
           };
           const draftLen = pick(props.useInput, (s) => (s != null && typeof s.draft === 'string' ? s.draft.length : 0));
+          // The send key's rim arc is the real draft length, nothing else. 120 chars
+          // is a display cap, not a measurement — the arc saturates, the draft does not.
+          useEffect(() => {
+            const node = typeof document === 'undefined' ? null : document.querySelector('.uV2eYG_primary');
+            if (node == null) return;
+            node.style.setProperty('--dsh-charge', Math.min(1, draftLen / 120).toFixed(3));
+          }, [draftLen]);
           const subFlight = pick(props.useInput, (s) => (s != null && (s.phase === 'claimed' || s.phase === 'submitting') ? 1 : 0));
           const pTextLen = pick(props.useChat, (s) => sumBlocks(s != null && s.legacy != null ? s.legacy.partial == null ? null : s.legacy.partial.blocks : null, 'text'));
           const pReaLen = pick(props.useChat, (s) => sumBlocks(s != null && s.legacy != null ? s.legacy.partial == null ? null : s.legacy.partial.blocks : null, 'reasoning'));

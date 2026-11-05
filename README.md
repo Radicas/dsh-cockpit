@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.10.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.11.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,42 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 充能核心与声纹发射器（v16.11）
+
+上一版只做了"形状 + 光晕"，那还是个按钮。这一版把两个键变成**有行为的东西**。
+
+### 发送键 = 充能核心
+
+深色六角凹槽，**边缘那道弧的长度 = 你真实草稿的字数**。
+每敲一个字弧就长一点，写到 120 字弧满。空草稿时整圈是暗的。
+
+- 弧长来自 `input.draft.length`，经 `--dsh-charge` 写到元素的 CSS 变量上
+- 没有草稿 → 弧为零。这个键不可能"假装"在充能
+- 悬停 → 一道光沿边缘旋转一周（2.2s）
+- 按下 → 凹槽收缩，光爆一下
+
+⚠️ 120 字是**显示上限**，不是测量值。弧会饱和，草稿不会。
+
+### 语音键 = 声纹发射器
+
+紫色六角，三种真实状态：
+
+| 宿主状态 | 表现 |
+|---|---|
+| `aria-haspopup="dialog"` | 转**琥珀**——宿主明说点了会开设置，即语音未配置 |
+| `data-voice-activity="recording"` | 琥珀热核 + **向外扩散的环**（1.6s 一圈） |
+| `disabled` | 压暗成未通电的凹槽 |
+
+旁边那道波形是**语音插件自己的真实振幅 SVG**（`ddpbLW_waveform`），我只改了颜色和光晕，
+没有生成任何图形——它的每个起伏都来自实际麦克风采样。输入电平条同理。
+
+### 技术要点
+
+- 外发光一律 `drop-shadow`：`clip-path` 会裁掉 `box-shadow` 的外阴影
+- 充能弧用 `::before` 的 `conic-gradient` + `radial-gradient` 遮罩做环，弧长即 `--dsh-charge`
+- 旋转光用 `::after` 的第二道 conic 遮罩环，仅悬停时启 `animation`
+- 扩散环挂在 `.ddpbLW_triggerAnchor`（无 clip-path 的父级）上，否则会被六角形剪掉
 
 ## 控制台键（v16.10）
 
