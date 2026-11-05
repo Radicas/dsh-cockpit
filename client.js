@@ -192,6 +192,7 @@ window.__ModuleLoader__.load({
         uptime: '在线',
         mission: '任务',
         speed: '速率',
+        cps: '字/秒',
         tokens: '令牌',
         out: '输出',
         cache: '缓存',
@@ -264,6 +265,7 @@ window.__ModuleLoader__.load({
         uptime: 'UPTIME',
         mission: 'MSN',
         speed: 'SPD',
+        cps: 'ch/s',
         tokens: 'TOK',
         out: 'OUT',
         cache: 'CACHE',
@@ -439,6 +441,19 @@ window.__ModuleLoader__.load({
       '.dsh-br-ltbar i[data-k="tool"]{background:' + VIOLET + '}',
       '.dsh-br-ltbar i[data-k="write"]{background:' + GREEN + '}',
       '.dsh-br-lttxt{flex:none;font-size:7.5px;letter-spacing:.08em;color:rgba(148,183,208,.75);font-variant-numeric:tabular-nums}',
+      '.dsh-br-tools{margin-top:7px;display:flex;flex-direction:column;gap:2px;flex:0 0 auto;overflow:hidden;max-height:64px}',
+      '.dsh-br-tools-head{font-size:7px;letter-spacing:.18em;text-transform:uppercase;color:rgba(148,183,208,.55);margin-bottom:2px}',
+      '.dsh-br-tools-head b{color:#b3a5ff;font-weight:500;margin-left:4px;font-variant-numeric:tabular-nums}',
+      '.dsh-br-trow{display:flex;align-items:center;gap:5px;font-size:7.5px;letter-spacing:.06em;color:rgba(148,183,208,.9)}',
+      '.dsh-br-tdot{flex:none;width:3px;height:3px;background:' + VIOLET + '}',
+      '.dsh-br-tname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dsh-br-tdur{flex:none;color:#b3a5ff;font-variant-numeric:tabular-nums}',
+      '.dsh-br-trow[data-err="true"] .dsh-br-tname,.dsh-br-trow[data-err="true"] .dsh-br-tdur{color:#ff9d9d}',
+      '.dsh-br-trow[data-err="true"] .dsh-br-tdot{background:#ff6b6b}',
+      '.dsh-br-trow[data-live="true"] .dsh-br-tname,.dsh-br-trow[data-live="true"] .dsh-br-tdur{color:' + AZ + '}',
+      '.dsh-br-trow[data-live="true"] .dsh-br-tdot{background:' + AZ + ';animation:dsh-br-pulse 1.1s ease-in-out infinite}',
+      '.dsh-br-spark{display:flex;align-items:flex-end;gap:1px;height:12px;margin-top:5px}',
+      '.dsh-br-spark i{flex:1 1 auto;min-width:0;background:linear-gradient(180deg,' + AZ + ',rgba(87,216,255,.22));opacity:.8}',
       '.dsh-br-ltcalls{flex:none;font-size:7.5px;color:#b3a5ff;font-variant-numeric:tabular-nums}',
       '.dsh-br-arc[data-live="run"] .dsh-br-arc-fill{animation:dsh-br-breathe 1.6s ease-in-out infinite}',
       '.dsh-br-arc-delta{font-size:7.5px;color:#8ce8b0;letter-spacing:.1em;font-variant-numeric:tabular-nums}',
@@ -917,6 +932,41 @@ window.__ModuleLoader__.load({
             }
             return turnErr + '|' + toolErr + '|' + retry + '|' + code + '|' + msg;
           }, '0|0|||');
+
+          // Tool ledger: real per-call durations. Settled calls pair the result's
+          // own `time` with the call head's `callTime`; in-flight calls are timed
+          // from their start `time`. Packed as a string so it re-renders only on
+          // real change.
+          const toolSig = pick(props.useChat, (s) => {
+            if (s == null || s.legacy == null) return '';
+            const rows = [];
+            const safe = (v) => String(v == null ? '' : v).replace(/[|;]/g, '/');
+            const rc = s.legacy.runningCalls;
+            if (rc != null && rc.length > 0) {
+              for (let i = rc.length - 1; i >= 0 && rows.length < 3; i--) {
+                const call = rc[i];
+                if (call == null) continue;
+                rows.push('L|' + (safe(call.name) || '?') + '|' + (Number(call.time) || 0) + '|0');
+              }
+            }
+            if (s.order != null && s.legacy.nodes != null) {
+              const ord = s.order;
+              const store = s.legacy.nodes;
+              const from = Math.max(0, ord.length - 30);
+              for (let i = ord.length - 1; i >= from; i--) {
+                let raw = null;
+                try { raw = store.get(ord[i]); } catch (err) {}
+                const d = raw == null ? null : raw.kind != null ? raw : raw.data != null ? raw.data : null;
+                if (d == null || d.kind !== 'tool-result') continue;
+                const from_ = Number(d.callTime);
+                const dur = Number.isFinite(from_) && from_ > 0 ? Math.max(0, (Number(d.time) || 0) - from_) : -1;
+                const nm = safe(d.name) || (d.call != null ? safe(d.call.name) : '') || '?';
+                rows.push('D|' + nm + '|' + dur + '|' + (d.isError === true ? '1' : '0'));
+                if (rows.length >= 6) break;
+              }
+            }
+            return rows.join(';');
+          }, '');
           const errParts = String(errSig).split('|');
           const turnErrN = Number(errParts[0]) || 0;
           const toolErrN = Number(errParts[1]) || 0;
@@ -959,6 +1009,7 @@ window.__ModuleLoader__.load({
             outMs: 0,
             firstTextT: null,
             prevErr: 0,
+            chHist: [],
             tick: 0,
             flashTick: null,
             flashT0: 0,
@@ -988,6 +1039,7 @@ window.__ModuleLoader__.load({
                 m.outMs = 0;
                 m.firstTextT = null;
                 m.prevErr = 0;
+                m.chHist = [];
                 m.flashTick = null;
                 setPulse([]);
                 return;
@@ -1012,6 +1064,7 @@ window.__ModuleLoader__.load({
                 m.toolMs = 0;
                 m.outMs = 0;
                 m.firstTextT = null;
+                m.chHist = [];
               } else if (!s.running && m.wasRun) {
                 m.wasRun = false;
                 m.runElapsed = (Date.now() - m.runStart) / 1000;
@@ -1024,6 +1077,11 @@ window.__ModuleLoader__.load({
                 else if (phase === 'out') m.outMs += dt;
                 if (m.firstTextT == null && chDelta > 0) m.firstTextT = Date.now();
               }
+              // Rolling 5s window of REAL char deltas with their REAL bucket
+              // durations — the only honest instantaneous output measure here
+              // (tokenUsage only settles at step end, so it would sawtooth).
+              m.chHist.push({ d: phase === 'out' ? chDelta : 0, t: dt });
+              if (m.chHist.length > 25) m.chHist.shift();
               if (m.lastTurns === 0 && s.turns > 0) m.lastTurns = s.turns;
               const flash = s.turns !== m.lastTurns;
               m.lastTurns = s.turns;
@@ -1080,6 +1138,32 @@ window.__ModuleLoader__.load({
           const decode =
             stats != null && stats.decodeMs > 0 ? stats.decodeTokens / (stats.decodeMs / 1000) : null;
 
+          // Tool ledger rows (see toolSig): 'L' = in flight, 'D' = settled.
+          const toolRows = String(toolSig)
+            .split(';')
+            .filter((row) => row !== '')
+            .slice(0, 4)
+            .map((row) => {
+              const p = row.split('|');
+              return { live: p[0] === 'L', name: p[1] === '' ? '?' : p[1], v: Number(p[2]) || 0, err: p[3] === '1' };
+            });
+
+          // Instantaneous output rate: REAL chars emitted over the REAL elapsed
+          // span of the rolling window. Deliberately characters, not tokens —
+          // provider token counts only settle at step end.
+          const chHist = Array.isArray(meta.chHist) ? meta.chHist : [];
+          let chSum = 0;
+          let chSpan = 0;
+          for (let i = 0; i < chHist.length; i++) {
+            chSum += chHist[i].d;
+            chSpan += chHist[i].t;
+          }
+          const cpsNow = chHist.length >= 3 && chSpan > 0 ? chSum / (chSpan / 1000) : null;
+          const cpsLive = running && cpsNow != null ? cpsNow : null;
+          const sparkVals = chHist.slice(-16).map((b) => b.d);
+          let sparkMax = 1;
+          for (let i = 0; i < sparkVals.length; i++) if (sparkVals[i] > sparkMax) sparkMax = sparkVals[i];
+
           const ttftMeasured = meta.firstTextT != null ? (meta.firstTextT - meta.runStart) / 1000 : null;
           const ttftWaiting = meta.wasRun && meta.firstTextT == null ? (Date.now() - meta.runStart) / 1000 : null;
           const ltTotal = meta.thinkMs + meta.toolMs + meta.outMs;
@@ -1120,6 +1204,27 @@ window.__ModuleLoader__.load({
             ),
           ) : null;
 
+          const toolLedger = toolRows.length > 0 ? h(
+            'div',
+            { className: 'dsh-br-tools' },
+            h('div', { className: 'dsh-br-tools-head' }, t('tools'), h('b', null, String(toolRows.length))),
+            ...toolRows.map((row, index) =>
+              h(
+                'div',
+                {
+                  key: index,
+                  className: 'dsh-br-trow',
+                  'data-live': row.live ? 'true' : 'false',
+                  'data-err': row.err ? 'true' : 'false',
+                  title: row.name,
+                },
+                h('i', { className: 'dsh-br-tdot' }),
+                h('span', { className: 'dsh-br-tname' }, row.name),
+                h('span', { className: 'dsh-br-tdur' }, row.live ? (row.v > 0 ? fmtS(Date.now() - row.v) : '\u2014') : row.v < 0 ? '\u2014' : fmtS(row.v)),
+              ),
+            ),
+          ) : null;
+
           const agentPanel = h(
             'div',
             { className: 'dsh-br-panel' },
@@ -1139,6 +1244,7 @@ window.__ModuleLoader__.load({
               h('button', { type: 'button', className: 'dsh-br-jump', 'data-k': 'latest', 'data-unread': unread ? 'true' : 'false', title: t('latest'), onClick: () => jumpTo('[data-turn-tail]') }, '\u21BA'),
             ),
             failRow,
+            toolLedger,
             h(
               'div',
               { className: 'dsh-br-split' },
@@ -1172,6 +1278,30 @@ window.__ModuleLoader__.load({
                 ),
               ),
               h('span', null, t('speed'), h('b', null, decode == null ? '\u2014' : decode.toFixed(1) + ' t/s')),
+            ),
+            h(
+              'div',
+              { className: 'dsh-br-srow', style: { marginTop: 3 } },
+              h(
+                'span',
+                null,
+                t('out'),
+                h(
+                  'b',
+                  null,
+                  cpsLive == null ? '\u2014' : cpsLive.toFixed(1) + ' ' + t('cps'),
+                ),
+              ),
+            ),
+            h(
+              'div',
+              { className: 'dsh-br-spark', 'aria-hidden': 'true' },
+              ...sparkVals.map((v, index) =>
+                h('i', {
+                  key: index,
+                  style: { height: Math.max(8, Math.round((v / sparkMax) * 100)) + '%' },
+                }),
+              ),
             ),
             liveTurnRow,
           );

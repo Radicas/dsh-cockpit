@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.0.1**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.1.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,29 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 工具台账与输出流速（v16.1）
+
+两件都是宿主已有真数，原先没接出来。
+
+### 工具台账（AGENT 面板）
+
+`▸TOOLS n` 下列最近四次工具调用：名字 + **真实耗时**。
+
+- 已结束：`ToolResultNode.time - ToolResultNode.callTime`（结果时刻减配对调用时刻）
+- 进行中：从 `RunningToolCall.time` 起算，青色呼吸点
+- 出错：`isError` 为真则整行转红
+- 扫描最近 30 个节点 + `legacy.runningCalls`，打包成字符串供 selector memo
+
+> 窗口截断导致调用头不在内存时 `callTime` 为 null，该行显示 `—` 而不是编一个数。
+
+### 输出流速
+
+- **SPD = 会话均值 t/s**：`sessionStats.decodeTokens / (decodeMs/1000)`，真实 token
+- **OUT = 当前字/秒**：滚动 5 秒窗口内**真实字符增量 ÷ 真实桶时长**，附 16 格火花条
+- 单位刻意不同（字 vs token）：provider 的 `outputTokens` 只在
+  `assistant/message`（步边界）落账，拿它算瞬时值会是"几秒 0 然后一个尖峰"的
+  锯齿假数据。字符增量是唯一诚实的瞬时量，故标 `字/秒`，不换算成 token
 
 ## 玻璃悬浮（v15.3）
 
