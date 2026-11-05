@@ -52,6 +52,18 @@ window.__ModuleLoader__.load({
     const ICE = '#dff2ff';
     const STEEL = 'rgba(148,183,208,.72)';
 
+    /* Cabin cursor: a small targeting reticle, drawn once as an SVG data URI.
+       Hotspot sits on the centre dot. If a CSP blocks data: cursors the whole
+       thing degrades to the platform arrow — no layout risk either way. */
+    const CURSOR_SVG =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26">' +
+      '<circle cx="13" cy="13" r="7.5" fill="none" stroke="#57d8ff" stroke-opacity=".5" stroke-width="1"/>' +
+      '<circle cx="13" cy="13" r="1.15" fill="#57d8ff" fill-opacity=".95"/>' +
+      '<path d="M13 1.6v4M13 20.4v4M1.6 13h4M20.4 13h4" stroke="#57d8ff" stroke-opacity=".45" ' +
+      'stroke-width="1" stroke-linecap="round"/>' +
+      '</svg>';
+    const CUR_AIM = 'url("data:image/svg+xml,' + encodeURIComponent(CURSOR_SVG) + '") 13 13';
+
     /* Near-star table: hand-written fixed coords [x%, y%, bright]. Baked into
        the sky bitmap once at load (see bakeSkyURL) — a texture, never a
        runtime measurement. Seeded far/mid tiers use a frozen LCG below. */
@@ -345,6 +357,13 @@ window.__ModuleLoader__.load({
          own background with fixed attachment — text and bubbles always render
          above their own background (no stacking gamble), the view outside the
          window stays put while the cabin scrolls. */
+      '.wSkVaW_root.wSkVaW_root{cursor:' + CUR_AIM + ',auto}',
+      /* typing surfaces keep the I-beam; clickable keeps the hand */
+      '.wSkVaW_root textarea,.wSkVaW_root input,.wSkVaW_root .uV2eYG_input{cursor:text}',
+      '.wSkVaW_root [contenteditable="true"]{cursor:text}',
+      '.wSkVaW_root button:not(:disabled),.wSkVaW_root a,.wSkVaW_root [role="button"]{cursor:pointer}',
+      /* host pins a plain arrow on these two; let them inherit the reticle */
+      '.wSkVaW_root .wSkVaW_crumbCurrent,.JObwrW_panel{cursor:inherit}',
       '.wSkVaW_root.wSkVaW_root{background-color:#04070d;background-image:var(--dsh-sky,linear-gradient(0deg,#050b16,#03060c));background-size:cover;background-position:center;background-repeat:no-repeat}',
       '.wSkVaW_root[data-phase=active] .wSkVaW_composerSeat.wSkVaW_composerSeat{background:linear-gradient(180deg,rgba(4,8,15,0) 0px,rgba(4,8,15,.82) 44px)}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
@@ -612,8 +631,10 @@ window.__ModuleLoader__.load({
       else if (ch === '}') brace--;
     }
     if (bal !== 0 || brace !== 0) {
+      // console.warn (not error) on purpose: selfcheck.cjs watches warnings, so
+      // an imbalanced stylesheet now fails the release gate instead of shipping.
       // eslint-disable-next-line no-console
-      console.error('[dsh-cockpit] CSS balance error — paren=' + bal + ' brace=' + brace);
+      console.warn('[dsh-cockpit] CSS balance error — paren=' + bal + ' brace=' + brace);
     }
 
     const TIME = new Intl.DateTimeFormat('en-GB', {

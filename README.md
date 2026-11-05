@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.2.1**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.3.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,25 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 船舱光标（v16.3）
+
+进舱后默认箭头换成**瞄准环**（26×26 SVG data URI：细环 + 中心点 + 四向刻线，热点在中心点）。
+
+**关键是不破坏输入手感**——分场景给不同光标：
+
+| 区域 | 光标 |
+|---|---|
+| 对话区（正文、面板、空白） | 瞄准环 |
+| 输入框 / 可编辑区 | 保持 I 型 |
+| 按钮、链接 | 保持手型 |
+| 侧栏拖宽 | 保持 col-resize |
+| 禁用按钮 | 保持默认箭头 |
+
+- 宿主的 `cursor:pointer`(15 处) / `col-resize` 都作用在元素自身，天然胜过继承，无需覆盖
+- 宿主给 `.wSkVaW_crumbCurrent`、`.JObwrW_panel` 钉了 `cursor:default`，已改为继承，否则那两块会露馅
+- CSP 若禁 data: 光标，整体退回系统箭头，无布局风险
+- 想关掉：删掉 `.wSkVaW_root.wSkVaW_root{cursor:...}` 那一行即可
 
 ## 上下文分段弧（v16.2）
 
