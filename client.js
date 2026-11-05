@@ -482,6 +482,8 @@ window.__ModuleLoader__.load({
       '.dsh-br-arc-seg[data-k="sys"]{stroke:#6d8ba3;filter:drop-shadow(0 0 4px rgba(109,139,163,.4))}',
       '.dsh-br-arc-seg[data-k="tools"]{stroke:' + VIOLET + ';filter:drop-shadow(0 0 4px rgba(139,124,246,.45))}',
       '.dsh-br-arc-seg[data-k="msg"]{stroke:' + AZ + ';filter:drop-shadow(0 0 5px rgba(87,216,255,.5))}',
+      '.dsh-br-arc-hit{fill:none;stroke:transparent;stroke-width:18;stroke-linecap:butt;pointer-events:stroke;cursor:help}',
+      '.dsh-br-arc-sub[data-hover="true"]{letter-spacing:.1em}',
       '.dsh-br-arc-pct{font-size:20px;color:' + ICE + ';font-variant-numeric:tabular-nums;letter-spacing:.04em}',
       '.dsh-br-arc-pct[data-hot="true"]{color:#ffd79a}',
       '.dsh-br-arc-sub{font-size:8px;letter-spacing:.18em;color:' + STEEL + ';margin-top:3px;font-variant-numeric:tabular-nums}',
@@ -1000,6 +1002,7 @@ window.__ModuleLoader__.load({
             errN: errN,
           };
           const [pulse, setPulse] = useState([]);
+          const [hoverSeg, setHoverSeg] = useState(null);
           const metaRef = useRef({
             prevText: 0,
             prevRea: 0,
@@ -1478,61 +1481,95 @@ window.__ModuleLoader__.load({
           const arcTip = projected == null || cap == null || cap <= 0
             ? '\u2014'
             : Number(projected).toLocaleString('en-US') + ' / ' + Number(cap).toLocaleString('en-US') + ' tok \u00B7 ' + Math.min(100, (projected / cap) * 100).toFixed(2) + '%';
+          const ARC_D = 'M8 58 A44 44 0 0 1 96 58';
+          const hovered = hoverSeg == null || segs == null
+            ? null
+            : segs.filter((seg) => seg.k === hoverSeg)[0] || null;
+          const hoverText = hovered == null
+            ? null
+            : hovered.name + ' ' + hovered.v.toLocaleString('en-US') + ' \u00B7 ' +
+              ((hovered.v / mixTotal) * 100).toFixed(1) + '% \u00B7 ' + t('heur');
+          const hoverColor = hovered == null ? null : hovered.k === 'sys' ? '#8ba9c0' : hovered.k === 'tools' ? '#b3a5ff' : AZ;
+
+          let arcSegEls = null;
+          if (pct != null && segs != null) {
+            const used = (pct / 100) * ARC;
+            const vis = [];
+            const hits = [];
+            let at = 0;
+            for (let i = 0; i < segs.length; i++) {
+              const seg = segs[i];
+              const raw = (seg.v / mixTotal) * used;
+              const len = raw > 0.9 ? raw - 0.7 : raw;
+              const start = at;
+              at += raw;
+              const dash = Math.max(0, len).toFixed(1) + ' ' + ARC;
+              const off = (-start).toFixed(1);
+              vis.push(
+                h('path', {
+                  key: seg.k,
+                  className: 'dsh-br-arc-seg',
+                  'data-k': seg.k,
+                  d: ARC_D,
+                  strokeDasharray: dash,
+                  strokeDashoffset: off,
+                }),
+              );
+              // Transparent, deliberately wide band on top: a 7px dash arc is a
+              // miserable hover target, so hit-testing gets its own 18px stroke.
+              hits.push(
+                h('path', {
+                  key: 'h-' + seg.k,
+                  className: 'dsh-br-arc-hit',
+                  'data-k': seg.k,
+                  d: ARC_D,
+                  strokeDasharray: dash,
+                  strokeDashoffset: off,
+                  onMouseEnter: () => setHoverSeg(seg.k),
+                  onMouseLeave: () => setHoverSeg(null),
+                }),
+              );
+            }
+            arcSegEls = vis.concat(hits);
+          }
+
           const ctxPanel = h(
             'div',
             { className: 'dsh-br-panel' },
-            h('div', { className: 'dsh-br-panel-head' }, t('ctx'), h('b', null, cap ? fmt(cap) : '\u2014')),
+            h('div', { className: 'dsh-br-panel-head', title: arcTip }, t('ctx'), h('b', null, cap ? fmt(cap) : '\u2014')),
             h(
               'div',
-              { className: 'dsh-br-arc', 'data-live': live, title: arcTip },
+              { className: 'dsh-br-arc', 'data-live': live },
               h(
                 'svg',
                 { viewBox: '0 0 104 66' },
                 h('path', { className: 'dsh-br-arc-track', d: 'M8 58 A44 44 0 0 1 96 58' }),
-                pct == null || segs == null
+                arcSegEls == null
                   ? h('path', {
                       className: 'dsh-br-arc-fill',
                       'data-hot': hot ? 'true' : 'false',
-                      d: 'M8 58 A44 44 0 0 1 96 58',
+                      d: ARC_D,
                       strokeDasharray: pct == null ? '0 ' + ARC : ((pct / 100) * ARC).toFixed(1) + ' ' + ARC,
                     })
-                  : h(
-                      F,
-                      null,
-                      ...(() => {
-                        const used = (pct / 100) * ARC;
-                        let at = 0;
-                        return segs.map((seg) => {
-                          const raw = (seg.v / mixTotal) * used;
-                          const len = raw > 0.9 ? raw - 0.7 : raw;
-                          const start = at;
-                          at += raw;
-                          return h(
-                            'path',
-                            {
-                              key: seg.k,
-                              className: 'dsh-br-arc-seg',
-                              'data-k': seg.k,
-                              d: 'M8 58 A44 44 0 0 1 96 58',
-                              strokeDasharray: Math.max(0, len).toFixed(1) + ' ' + ARC,
-                              strokeDashoffset: (-start).toFixed(1),
-                            },
-                            h(
-                              'title',
-                              null,
-                              seg.name + ' ' + seg.v.toLocaleString('en-US') + ' tok \u00B7 ' +
-                                ((seg.v / mixTotal) * 100).toFixed(1) + '% \u00B7 ' + t('heur'),
-                            ),
-                          );
-                        });
-                      })(),
-                    ),
+                  : h(F, null, ...arcSegEls),
               ),
               h(
                 'div',
                 null,
                 h('div', { className: 'dsh-br-arc-pct', 'data-hot': hot ? 'true' : 'false' }, pct == null ? '--' : pct.toFixed(1) + '%'),
-                h('div', { className: 'dsh-br-arc-sub' }, projected == null ? 'no sample yet' : fmt(easedProj) + ' tok'),
+                h(
+                  'div',
+                  {
+                    className: 'dsh-br-arc-sub',
+                    'data-hover': hoverText == null ? 'false' : 'true',
+                    style: hoverColor == null ? undefined : { color: hoverColor },
+                  },
+                  hoverText != null
+                    ? hoverText
+                    : projected == null
+                      ? 'no sample yet'
+                      : fmt(easedProj) + ' tok',
+                ),
                 live === 'run' && meta.turnChars + meta.turnRea > 0
                   ? h('div', { className: 'dsh-br-arc-delta' }, '+' + (meta.turnChars + meta.turnRea) + ' ' + t('charUnit'))
                   : null,
