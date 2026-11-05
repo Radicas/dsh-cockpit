@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.1.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.2.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,23 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 上下文分段弧（v16.2）
+
+CTX 弧不再是一根青条，而是**三段**：系统提示 / 工具 schema / 对话消息。
+
+- 数据源：`contextBreakdown = {systemTokens, toolsTokens, messageTokens}`
+- 画法：SVG 半圆弧按 `strokeDasharray + strokeDashoffset` 铺三段，
+  段间留 0.7 单位缝隙；三段颜色与下方 MIX 面板三行**完全同色**，
+  一眼对上号（灰蓝=系统、紫=工具、青=消息）
+- 悬停任一段 → 精确 token + 占比，并注明「估算」
+- 弧的总跨距仍由 `contextPressure.projectedTokens / contextWindow` 决定：
+  **外侧看占用多少，内侧看占的是什么**
+- `contextBreakdown` 取不到时自动退回原来的一根青条（不留空白）
+
+> 诚实标注：`contextBreakdown` 按宿主契约是**对可见表面的启发式估算**，
+> 不是 provider 上报值。所以段 tooltip 带「估算」字样，且三段比例只在
+> 弧的占用跨度内分配，不去改总占用数。
 
 ## 工具台账与输出流速（v16.1）
 

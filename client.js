@@ -193,6 +193,7 @@ window.__ModuleLoader__.load({
         mission: '任务',
         speed: '速率',
         cps: '字/秒',
+        heur: '估算',
         tokens: '令牌',
         out: '输出',
         cache: '缓存',
@@ -266,6 +267,7 @@ window.__ModuleLoader__.load({
         mission: 'MSN',
         speed: 'SPD',
         cps: 'ch/s',
+        heur: 'estimated',
         tokens: 'TOK',
         out: 'OUT',
         cache: 'CACHE',
@@ -476,6 +478,10 @@ window.__ModuleLoader__.load({
       '.dsh-br-arc-track{fill:none;stroke:rgba(87,216,255,.14);stroke-width:7;stroke-linecap:round}',
       '.dsh-br-arc-fill{fill:none;stroke:' + AZ + ';stroke-width:7;stroke-linecap:round;transition:stroke-dasharray .8s ease;filter:drop-shadow(0 0 5px rgba(87,216,255,.55))}',
       '.dsh-br-arc-fill[data-hot="true"]{stroke:' + AMBER + ';filter:drop-shadow(0 0 6px rgba(255,196,107,.6))}',
+      '.dsh-br-arc-seg{fill:none;stroke-width:7;stroke-linecap:butt;transition:stroke-dasharray .8s ease,stroke-dashoffset .8s ease}',
+      '.dsh-br-arc-seg[data-k="sys"]{stroke:#6d8ba3;filter:drop-shadow(0 0 4px rgba(109,139,163,.4))}',
+      '.dsh-br-arc-seg[data-k="tools"]{stroke:' + VIOLET + ';filter:drop-shadow(0 0 4px rgba(139,124,246,.45))}',
+      '.dsh-br-arc-seg[data-k="msg"]{stroke:' + AZ + ';filter:drop-shadow(0 0 5px rgba(87,216,255,.5))}',
       '.dsh-br-arc-pct{font-size:20px;color:' + ICE + ';font-variant-numeric:tabular-nums;letter-spacing:.04em}',
       '.dsh-br-arc-pct[data-hot="true"]{color:#ffd79a}',
       '.dsh-br-arc-sub{font-size:8px;letter-spacing:.18em;color:' + STEEL + ';margin-top:3px;font-variant-numeric:tabular-nums}',
@@ -1446,6 +1452,22 @@ window.__ModuleLoader__.load({
           );
 
           // RIGHT — CONTEXT arc (eased sweep + live breathing + char flow) --
+          // Composition folded in from contextBreakdown so the arc itself shows
+          // WHAT is filling the window, not just how much. These three figures
+          // are host heuristics over the visible surface (per the projection's
+          // own contract), so segment tooltips say so.
+          const sysT = mix == null ? 0 : mix.systemTokens;
+          const toolsT = mix == null ? 0 : mix.toolsTokens;
+          const msgT = mix == null ? 0 : mix.messageTokens;
+          const mixTotal = Math.max(1, sysT + toolsT + msgT);
+          const segs =
+            mix == null
+              ? null
+              : [
+                  { k: 'sys', name: t('system'), v: sysT },
+                  { k: 'tools', name: t('tools'), v: toolsT },
+                  { k: 'msg', name: t('msgs'), v: msgT },
+                ];
           const projected =
             pressure == null ? null : pressure.projectedTokens != null ? pressure.projectedTokens : pressure.pressureTokens;
           const cap = pressure == null ? null : pressure.contextWindow;
@@ -1467,12 +1489,44 @@ window.__ModuleLoader__.load({
                 'svg',
                 { viewBox: '0 0 104 66' },
                 h('path', { className: 'dsh-br-arc-track', d: 'M8 58 A44 44 0 0 1 96 58' }),
-                h('path', {
-                  className: 'dsh-br-arc-fill',
-                  'data-hot': hot ? 'true' : 'false',
-                  d: 'M8 58 A44 44 0 0 1 96 58',
-                  strokeDasharray: pct == null ? '0 ' + ARC : ((pct / 100) * ARC).toFixed(1) + ' ' + ARC,
-                }),
+                pct == null || segs == null
+                  ? h('path', {
+                      className: 'dsh-br-arc-fill',
+                      'data-hot': hot ? 'true' : 'false',
+                      d: 'M8 58 A44 44 0 0 1 96 58',
+                      strokeDasharray: pct == null ? '0 ' + ARC : ((pct / 100) * ARC).toFixed(1) + ' ' + ARC,
+                    })
+                  : h(
+                      F,
+                      null,
+                      ...(() => {
+                        const used = (pct / 100) * ARC;
+                        let at = 0;
+                        return segs.map((seg) => {
+                          const raw = (seg.v / mixTotal) * used;
+                          const len = raw > 0.9 ? raw - 0.7 : raw;
+                          const start = at;
+                          at += raw;
+                          return h(
+                            'path',
+                            {
+                              key: seg.k,
+                              className: 'dsh-br-arc-seg',
+                              'data-k': seg.k,
+                              d: 'M8 58 A44 44 0 0 1 96 58',
+                              strokeDasharray: Math.max(0, len).toFixed(1) + ' ' + ARC,
+                              strokeDashoffset: (-start).toFixed(1),
+                            },
+                            h(
+                              'title',
+                              null,
+                              seg.name + ' ' + seg.v.toLocaleString('en-US') + ' tok \u00B7 ' +
+                                ((seg.v / mixTotal) * 100).toFixed(1) + '% \u00B7 ' + t('heur'),
+                            ),
+                          );
+                        });
+                      })(),
+                    ),
               ),
               h(
                 'div',
@@ -1487,10 +1541,6 @@ window.__ModuleLoader__.load({
           );
 
           // RIGHT — MIX composition ---------------------------------------------
-          const sysT = mix == null ? 0 : mix.systemTokens;
-          const toolsT = mix == null ? 0 : mix.toolsTokens;
-          const msgT = mix == null ? 0 : mix.messageTokens;
-          const mixTotal = Math.max(1, sysT + toolsT + msgT);
           const promptSide =
             usage == null ? 0 : usage.uncachedInputTokens + usage.cacheReadTokens + usage.cacheWriteTokens;
           const hitPct = usage != null && promptSide > 0 ? Math.round((usage.cacheReadTokens / promptSide) * 100) : null;
