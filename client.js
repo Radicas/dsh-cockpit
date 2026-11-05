@@ -705,79 +705,81 @@ window.__ModuleLoader__.load({
       '.uV2eYG_card.uV2eYG_card:before{content:"";position:absolute;inset:0;border-radius:8px;pointer-events:none;opacity:.6;background:linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px top 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') left 7px bottom 7px/1px 9px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/9px 1px no-repeat,linear-gradient(' + AZ + ',' + AZ + ') right 7px bottom 7px/1px 9px no-repeat}',
       '.uV2eYG_input.uV2eYG_input{caret-color:' + AZ + '}',
       '.uV2eYG_placeholder.uV2eYG_placeholder{color:#7e97ae}',
-      /* ── Console keys v16.11 ──────────────────────────────────────────────
-         Two behaviours instead of two shapes.
+      /* ── Console keys v16.12: no key body, only light ─────────────────────
+         The hexagon was wrong: every other surface here is a rectangle with 45°
+         bevels, and a 38px pointy-top hex just reads as a nut. So both keys
+         drop the socket entirely — they are a dashed rim plus a glyph.
 
-         SEND is a charging core: a dark hexagon socket whose rim arc is driven
-         by the REAL draft length (input.draft) through --dsh-charge, so writing
-         literally charges the key. Nothing else feeds the arc; an empty draft
-         leaves it dark. Hover spins a light around the rim, press collapses it.
+         SEND: the dashed rim is the empty socket; the bright arc on top of it
+         IS the charge, and its length is the real draft length via --dsh-charge.
+         Empty draft → no bright arc at all, only the dashed rim, so the ring is
+         visibly broken and closing as you write. Hover spins the dashed rim.
 
-         VOICE is an emitter: violet socket that turns amber when the host says
-         the feature is unconfigured (aria-haspopup=dialog), and emits expanding
-         rings while the plugin reports data-voice-activity="recording" — the
-         waveform beside it is the plugin's own real-amplitude SVG, only recoloured.
+         VOICE: same rim, violet, turns amber when the host advertises
+         aria-haspopup=dialog, emits rings on real data-voice-activity=recording.
 
-         Outer light uses drop-shadow: clip-path would cut a box-shadow. */
-      '.uV2eYG_primary.uV2eYG_primary{position:relative;width:38px;height:38px;padding:0;border-radius:0;overflow:visible;' +
-        'clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);' +
-        'background:radial-gradient(circle at 50% 44%,#0e2338,#050d16 74%);color:#5d7d96;' +
-        'box-shadow:inset 0 0 0 1px rgba(87,216,255,.26),inset 0 0 14px rgba(4,18,30,.9);' +
-        'filter:drop-shadow(0 0 3px rgba(87,216,255,.22));transform:translateY(-2px);' +
-        'transition:color .22s ease,box-shadow .22s ease,filter .22s ease,transform .1s ease}',
-      /* the charge arc — length == real draft progress, not a decoration */
-      '.uV2eYG_primary.uV2eYG_primary::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;' +
-        'background:conic-gradient(from -90deg,#8fe9ff calc(var(--dsh-charge,0) * 1turn),rgba(87,216,255,.09) 0);' +
-        '-webkit-mask:radial-gradient(closest-side,transparent 64%,#000 67%);' +
-        'mask:radial-gradient(closest-side,transparent 64%,#000 67%)}',
-      '.uV2eYG_primary.uV2eYG_primary::after{content:"";position:absolute;inset:-2px;z-index:0;pointer-events:none;opacity:0;' +
-        'background:conic-gradient(from 0deg,transparent 0 72%,rgba(205,246,255,.95) 86%,transparent 94%);' +
-        '-webkit-mask:radial-gradient(closest-side,transparent 60%,#000 65%);' +
-        'mask:radial-gradient(closest-side,transparent 60%,#000 65%);transition:opacity .2s ease}',
+         No clip-path anywhere now, so outer glow can go back to drop-shadow
+         without being cut, and the composer row keeps its air. */
+      '.uV2eYG_primary.uV2eYG_primary{position:relative;width:38px;height:38px;padding:0;border:0;border-radius:50%;' +
+        'background:radial-gradient(circle at 50% 50%,rgba(87,216,255,.10),transparent 68%);color:rgba(140,180,205,.5);' +
+        'transform:translateY(-2px);transition:color .22s ease,background .22s ease,filter .22s ease,transform .1s ease}',
+      /* dashed rim = the empty socket waiting to be charged */
+      '.uV2eYG_primary.uV2eYG_primary::before{content:"";position:absolute;inset:4px;border-radius:50%;' +
+        'border:1px dashed rgba(87,216,255,.26);transition:border-color .22s ease}',
+      /* bright arc = real charge; length is the draft, nothing else */
+      '.uV2eYG_primary.uV2eYG_primary::after{content:"";position:absolute;inset:4px;border-radius:50%;pointer-events:none;' +
+        'background:conic-gradient(from -90deg,rgba(87,216,255,.45) 0deg,#8fe9ff calc(var(--dsh-charge,0) * .75turn),' +
+        '#eafcff calc(var(--dsh-charge,0) * 1turn),transparent calc(var(--dsh-charge,0) * 1turn));' +
+        '-webkit-mask:radial-gradient(closest-side,transparent 84%,#000 88%,#000 97%,transparent 100%);' +
+        'mask:radial-gradient(closest-side,transparent 84%,#000 88%,#000 97%,transparent 100%)}',
       '.uV2eYG_primary.uV2eYG_primary>svg{position:relative;z-index:1;width:16px;height:16px;transition:filter .2s ease}',
-      '.uV2eYG_primary.uV2eYG_primary:not(:disabled){color:#dff2ff;' +
-        'box-shadow:inset 0 0 0 1px rgba(87,216,255,.85),inset 0 0 18px rgba(47,159,216,.35);' +
-        'filter:drop-shadow(0 0 9px rgba(87,216,255,.7))}',
+      '.uV2eYG_primary.uV2eYG_primary:not(:disabled){color:#eafcff;' +
+        'background:radial-gradient(circle at 50% 50%,rgba(87,216,255,.22),transparent 70%);' +
+        'filter:drop-shadow(0 0 8px rgba(87,216,255,.55))}',
+      '.uV2eYG_primary.uV2eYG_primary:not(:disabled)::before{border-color:rgba(87,216,255,.55)}',
       '.uV2eYG_primary.uV2eYG_primary:not(:disabled)>svg{filter:drop-shadow(0 0 6px rgba(160,240,255,.95))}',
-      '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled)::after{opacity:1;animation:dsh-br-keysweep 2.2s linear infinite}',
       '.uV2eYG_primary.uV2eYG_primary:hover:not(:disabled){color:#fff;' +
-        'box-shadow:inset 0 0 0 1px rgba(140,235,255,1),inset 0 0 22px rgba(87,216,255,.45);' +
-        'filter:drop-shadow(0 0 14px rgba(87,216,255,.95))}',
-      '.uV2eYG_primary.uV2eYG_primary:active:not(:disabled){transform:translateY(-1px) scale(.9);' +
-        'filter:brightness(1.15) drop-shadow(0 0 18px rgba(160,240,255,1))}',
+        'background:radial-gradient(circle at 50% 50%,rgba(87,216,255,.32),transparent 72%);' +
+        'filter:drop-shadow(0 0 13px rgba(87,216,255,.85))}',
+      '.uV2eYG_primary.uV2eYG_primary:hover::before{border-color:rgba(140,235,255,.8);animation:dsh-br-keysweep 3.4s linear infinite}',
+      '.uV2eYG_primary.uV2eYG_primary:active:not(:disabled){transform:translateY(-2px) scale(.88);' +
+        'filter:brightness(1.2) drop-shadow(0 0 18px rgba(160,240,255,1))}',
       '.uV2eYG_primary.uV2eYG_primary:focus-visible{outline:none;' +
-        'box-shadow:inset 0 0 0 2px rgba(140,235,255,1),inset 0 0 22px rgba(87,216,255,.4)}',
-      '.uV2eYG_primary.uV2eYG_primary:disabled{opacity:1;transform:translateY(-2px);color:#4a6478;' +
-        'box-shadow:inset 0 0 0 1px rgba(87,216,255,.16),inset 0 0 14px rgba(4,18,30,.9);' +
-        'filter:drop-shadow(0 0 2px rgba(87,216,255,.15))}',
-      /* voice emitter */
+        'background:radial-gradient(circle at 50% 50%,rgba(87,216,255,.24),transparent 70%)}',
+      '.uV2eYG_primary.uV2eYG_primary:focus-visible::before{border-color:#8fe9ff;border-style:solid}',
+      '.uV2eYG_primary.uV2eYG_primary:disabled{opacity:1;transform:translateY(-2px);filter:none;color:rgba(120,160,185,.42)}',
+      /* voice emitter — same rim language, violet channel */
       '.ddpbLW_triggerAnchor.ddpbLW_triggerAnchor{position:relative;flex:none;display:inline-flex}',
-      '.ddpbLW_trigger.ddpbLW_trigger{position:relative;width:32px;height:32px;padding:0;border-radius:0;overflow:visible;' +
-        'clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);' +
-        'background:radial-gradient(circle at 50% 44%,#181233,#070b16 74%);color:#a99cf0;' +
-        'box-shadow:inset 0 0 0 1px rgba(139,124,246,.4),inset 0 0 12px rgba(6,10,22,.9);' +
-        'filter:drop-shadow(0 0 3px rgba(139,124,246,.25));' +
-        'transition:color .2s ease,box-shadow .2s ease,filter .2s ease,transform .1s ease}',
+      '.ddpbLW_trigger.ddpbLW_trigger{position:relative;width:34px;height:34px;padding:0;border:0;border-radius:50%;' +
+        'background:radial-gradient(circle at 50% 50%,rgba(139,124,246,.12),transparent 68%);color:#a99cf0;' +
+        'transition:color .2s ease,background .2s ease,filter .2s ease,transform .1s ease}',
+      '.ddpbLW_trigger.ddpbLW_trigger::before{content:"";position:absolute;inset:4px;border-radius:50%;' +
+        'border:1px dashed rgba(139,124,246,.35);transition:border-color .2s ease}',
       '.ddpbLW_trigger.ddpbLW_trigger>svg{position:relative;z-index:1;width:16px;height:16px}',
       '.ddpbLW_trigger.ddpbLW_trigger:hover:not(:disabled){color:#e4dcff;' +
-        'box-shadow:inset 0 0 0 1px rgba(160,145,255,.9),inset 0 0 16px rgba(139,124,246,.3);' +
-        'filter:drop-shadow(0 0 10px rgba(139,124,246,.8))}',
-      '.ddpbLW_trigger.ddpbLW_trigger:active:not(:disabled){transform:scale(.92)}',
-      '.ddpbLW_trigger.ddpbLW_trigger:focus-visible{outline:none;' +
-        'box-shadow:inset 0 0 0 2px rgba(160,145,255,1),inset 0 0 16px rgba(139,124,246,.35)}',
-      '.ddpbLW_trigger.ddpbLW_trigger:disabled{background:radial-gradient(circle at 50% 44%,#111827,#06090f 74%);' +
-        'color:#4d5a6b;box-shadow:inset 0 0 0 1px rgba(139,124,246,.16);filter:none}',
-      /* host says: this opens a setup dialog, so the feature is not configured */
+        'background:radial-gradient(circle at 50% 50%,rgba(139,124,246,.26),transparent 70%);' +
+        'filter:drop-shadow(0 0 11px rgba(139,124,246,.8))}',
+      '.ddpbLW_trigger.ddpbLW_trigger:hover::before{border-color:rgba(170,155,255,.85);' +
+        'animation:dsh-br-keysweep 3.4s linear infinite}',
+      '.ddpbLW_trigger.ddpbLW_trigger:active:not(:disabled){transform:scale(.9)}',
+      '.ddpbLW_trigger.ddpbLW_trigger:focus-visible{outline:none}',
+      '.ddpbLW_trigger.ddpbLW_trigger:focus-visible::before{border-color:#b3a5ff;border-style:solid}',
+      '.ddpbLW_trigger.ddpbLW_trigger:disabled{background:none;color:rgba(120,140,165,.4);filter:none}',
+      '.ddpbLW_trigger.ddpbLW_trigger:disabled::before{border-color:rgba(139,124,246,.14)}',
+      /* host advertises a setup dialog → voice is not configured */
       '.ddpbLW_trigger.ddpbLW_trigger[aria-haspopup="dialog"]{color:#ffd79a;' +
-        'box-shadow:inset 0 0 0 1px rgba(255,196,107,.55),inset 0 0 12px rgba(255,196,107,.12);' +
+        'background:radial-gradient(circle at 50% 50%,rgba(255,196,107,.14),transparent 68%);' +
         'filter:drop-shadow(0 0 7px rgba(255,196,107,.45))}',
-      /* real recording state → emission rings + hot socket */
+      '.ddpbLW_trigger.ddpbLW_trigger[aria-haspopup="dialog"]::before{border-color:rgba(255,196,107,.55)}',
+      /* real recording state → emission rings + hot rim */
       '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_triggerAnchor::after{content:"";' +
-        'position:absolute;inset:0;pointer-events:none;border-radius:50%;' +
+        'position:absolute;inset:2px;pointer-events:none;border-radius:50%;' +
         'border:1px solid rgba(255,196,107,.8);animation:dsh-br-emit 1.6s ease-out infinite}',
       '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_trigger{color:#fff;' +
-        'box-shadow:inset 0 0 0 1px rgba(255,196,107,.95),inset 0 0 16px rgba(255,196,107,.25);' +
+        'background:radial-gradient(circle at 50% 50%,rgba(255,196,107,.28),transparent 70%);' +
         'filter:drop-shadow(0 0 12px rgba(255,196,107,.9))}',
+      '.uV2eYG_activity:has([data-voice-activity="recording"]) .ddpbLW_trigger::before{' +
+        'border-color:rgba(255,196,107,.95);border-style:solid}',
       /* the plugin's real-amplitude waveform and level bars, recoloured only */
       '.ddpbLW_waveform{color:#c9bfff;filter:drop-shadow(0 0 6px rgba(139,124,246,.65))}',
       '.ddpbLW_inputLevel>span{background:rgba(139,124,246,.35);border-radius:1px}',
