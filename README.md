@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.12.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.13.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,44 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 以太粒子（v16.13）
+
+打字时，以太从输入框飞进充能环。
+
+**它是真的触发，不是自嗨动画**：只有草稿字数**增长**才发射——删字不发射、粘贴 4000 字只发 3 颗、
+空输入与没装语音时什么都不飞。
+
+### 实现
+
+- 一块 `position:fixed` 的 canvas（DPR 上限 2），`pointer-events:none`，z-index 9998
+- 每颗粒子走**二次贝塞尔**：起点取输入框内的近似位置 → 控制点下压 30px（让弧线沉下去）→ 终点是充能环中心
+- 缓动 `u = u0²·0.82 + u0·0.18`：先慢后快，像被环吸进去
+- 粒子 520–780ms，途中画 8.5% 的拖尾；抵达时在环心放一圈扩散闪光
+- **加法混合** `lighter`，所以叠加处自然变亮
+- 并发上限 40，单次击键最多 3 颗
+
+### 性能纪律
+
+- rAF 循环**只在有粒子时存在**，粒子与闪光清空后立刻 `cancel` 并清屏，不留空转
+- 尊重 `prefers-reduced-motion: reduce`：命中就整个不挂载
+- 插件卸载时移除画布与监听
+
+### 新增 `ethercheck.cjs`
+
+自检只能证明代码不报错，**证明不了粒子会画、会消灭、循环会停**。这是第二个门禁：
+
+```
+$ node ethercheck.cjs
+  ok  canvas mounted 2880x1800 (dpr 2 of 1440x900)
+  ok  54 frames, 157 strokes, 103 fills, loop stopped cleanly
+  ok  dispose removed the canvas
+ETHER-CHECK PASSED
+```
+
+它用假 DOM + 手动驱动的 rAF 跑完整生命周期，并断言三件事：发射只排一帧、循环在粒子消灭后
+**必须停止**（不停就是耗电 bug）、卸载后画布不残留。装包前三个门禁全过：`node --check`、
+`selfcheck.cjs`、`ethercheck.cjs`。
 
 ## 只有光，没有键体（v16.12）
 

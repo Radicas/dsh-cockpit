@@ -38,6 +38,162 @@ window.__ModuleLoader__.load({
     const F = React.Fragment;
     const { useEffect, useRef, useState } = React;
 
+    // ── Ether ───────────────────────────────────────────────────────────────
+    // Real keystrokes launch particles that arc from the input into the send
+    // ring. Decorative, but never decorative on its own: nothing flies unless
+    // the draft actually grew, so a paste of 4000 chars spawns 3 particles and
+    // deleting text spawns none. One canvas, one rAF loop that exists only
+    // while particles are alive, 40 in flight max.
+    let etherSys = null;
+
+    function mountEther() {
+      const noop = () => {};
+      try {
+        if (typeof document === 'undefined' || typeof window === 'undefined') return noop;
+        if (document.body == null || typeof window.requestAnimationFrame !== 'function') return noop;
+        let reduced = false;
+        try {
+          reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches === true;
+        } catch (err) {
+          reduced = false;
+        }
+        if (reduced) return noop;
+
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('aria-hidden', 'true');
+        canvas.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:none;z-index:9998';
+        document.body.appendChild(canvas);
+        const g = canvas.getContext('2d');
+        if (g == null) return noop;
+
+        const sys = { parts: [], flashes: [], raf: 0, last: 0, dpr: 1, w: 0, h: 0 };
+        const size = () => {
+          sys.dpr = Math.min(2, window.devicePixelRatio || 1);
+          sys.w = window.innerWidth;
+          sys.h = window.innerHeight;
+          canvas.width = Math.round(sys.w * sys.dpr);
+          canvas.height = Math.round(sys.h * sys.dpr);
+          g.setTransform(sys.dpr, 0, 0, sys.dpr, 0, 0);
+        };
+        size();
+        window.addEventListener('resize', size);
+
+        const at = (p, u, out) => {
+          const iu = 1 - u;
+          out.x = iu * iu * p.ax + 2 * iu * u * p.cx + u * u * p.tx;
+          out.y = iu * iu * p.ay + 2 * iu * u * p.cy + u * u * p.ty;
+          return out;
+        };
+        const head = { x: 0, y: 0 };
+        const tail = { x: 0, y: 0 };
+
+        const frame = (ts) => {
+          const dt = sys.last === 0 ? 16 : Math.min(48, ts - sys.last);
+          sys.last = ts;
+          g.clearRect(0, 0, sys.w, sys.h);
+          g.globalCompositeOperation = 'lighter';
+          for (let i = sys.parts.length - 1; i >= 0; i -= 1) {
+            const p = sys.parts[i];
+            p.t += dt;
+            const u0 = p.t / p.ttl;
+            if (u0 >= 1) {
+              sys.parts.splice(i, 1);
+              sys.flashes.push({ x: p.tx, y: p.ty, t: 0, ttl: 300 });
+              continue;
+            }
+            // slow drift outward, then swallowed by the ring
+            const u = u0 * u0 * 0.82 + u0 * 0.18;
+            at(p, u, head);
+            at(p, Math.max(0, u - 0.085), tail);
+            const fade = Math.min(1, u0 * 7) * (1 - u0 * 0.15);
+            g.strokeStyle = 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (0.72 * fade).toFixed(3) + ')';
+            g.lineWidth = 1.5;
+            g.beginPath();
+            g.moveTo(tail.x, tail.y);
+            g.lineTo(head.x, head.y);
+            g.stroke();
+            g.fillStyle = 'rgba(' + p.r + ',' + p.g + ',' + p.b + ',' + (0.95 * fade).toFixed(3) + ')';
+            g.beginPath();
+            g.arc(head.x, head.y, 1.7, 0, 6.2832);
+            g.fill();
+          }
+          for (let i = sys.flashes.length - 1; i >= 0; i -= 1) {
+            const f = sys.flashes[i];
+            f.t += dt;
+            const u = f.t / f.ttl;
+            if (u >= 1) {
+              sys.flashes.splice(i, 1);
+              continue;
+            }
+            g.strokeStyle = 'rgba(214,250,255,' + (0.5 * (1 - u)).toFixed(3) + ')';
+            g.lineWidth = 1.3;
+            g.beginPath();
+            g.arc(f.x, f.y, 3 + 13 * u, 0, 6.2832);
+            g.stroke();
+          }
+          g.globalCompositeOperation = 'source-over';
+          if (sys.parts.length === 0 && sys.flashes.length === 0) {
+            g.clearRect(0, 0, sys.w, sys.h);
+            sys.raf = 0;
+            sys.last = 0;
+            return;
+          }
+          sys.raf = window.requestAnimationFrame(frame);
+        };
+
+        sys.launch = (count) => {
+          if (sys.parts.length >= 40) return;
+          const ring = document.querySelector('.uV2eYG_primary');
+          const field = document.querySelector('.uV2eYG_input') || document.querySelector('.uV2eYG_card');
+          if (ring == null || field == null) return;
+          const rr = ring.getBoundingClientRect();
+          const fr = field.getBoundingClientRect();
+          if (rr.width === 0 || fr.width === 0) return;
+          const tx = rr.left + rr.width / 2;
+          const ty = rr.top + rr.height / 2;
+          const n = Math.max(1, Math.min(3, count));
+          for (let i = 0; i < n; i += 1) {
+            const ax = fr.left + 18 + Math.random() * Math.min(150, Math.max(24, fr.width * 0.32));
+            const ay = fr.bottom - Math.min(26, Math.max(14, fr.height * 0.42)) + (Math.random() - 0.5) * 10;
+            const cx = (ax + tx) / 2 + (Math.random() - 0.5) * 36;
+            const cy = (ay + ty) / 2 + 30 + Math.random() * 24;
+            const violet = Math.random() < 0.3;
+            sys.parts.push({
+              ax: ax, ay: ay, cx: cx, cy: cy, tx: tx, ty: ty,
+              t: 0, ttl: 520 + Math.random() * 260,
+              r: violet ? 166 : 172, g: violet ? 148 : 238, b: 255,
+            });
+          }
+          if (sys.raf === 0) sys.raf = window.requestAnimationFrame(frame);
+        };
+
+        etherSys = sys;
+        const dispose = () => {
+          if (etherSys === sys) etherSys = null;
+          if (sys.raf !== 0 && typeof window.cancelAnimationFrame === 'function') {
+            window.cancelAnimationFrame(sys.raf);
+          }
+          window.removeEventListener('resize', size);
+          if (canvas.parentNode != null) canvas.parentNode.removeChild(canvas);
+        };
+        // Test seam only: lets ethercheck.cjs drive particles without a renderer.
+        dispose.__launch = sys.launch;
+        return dispose;
+      } catch (err) {
+        return noop;
+      }
+    }
+
+    function etherLaunch(count) {
+      if (etherSys == null) return;
+      try {
+        etherSys.launch(count);
+      } catch (err) {
+        /* never let decoration break typing */
+      }
+    }
+
+
     const NS = 'bridge';
     const SOURCE = 'dsh-cockpit';
     const BOOT_TS = Date.now();
@@ -1104,10 +1260,14 @@ window.__ModuleLoader__.load({
           const draftLen = pick(props.useInput, (s) => (s != null && typeof s.draft === 'string' ? s.draft.length : 0));
           // The send key's rim arc is the real draft length, nothing else. 120 chars
           // is a display cap, not a measurement — the arc saturates, the draft does not.
+          const prevDraft = useRef(draftLen);
           useEffect(() => {
+            const grown = draftLen - prevDraft.current;
+            prevDraft.current = draftLen;
             const node = typeof document === 'undefined' ? null : document.querySelector('.uV2eYG_primary');
-            if (node == null) return;
-            node.style.setProperty('--dsh-charge', Math.min(1, draftLen / 120).toFixed(3));
+            if (node != null) node.style.setProperty('--dsh-charge', Math.min(1, draftLen / 120).toFixed(3));
+            // only real growth launches ether; deletions and no-ops launch nothing
+            if (grown > 0) etherLaunch(grown);
           }, [draftLen]);
           const subFlight = pick(props.useInput, (s) => (s != null && (s.phase === 'claimed' || s.phase === 'submitting') ? 1 : 0));
           const pTextLen = pick(props.useChat, (s) => sumBlocks(s != null && s.legacy != null ? s.legacy.partial == null ? null : s.legacy.partial.blocks : null, 'text'));
@@ -2147,6 +2307,7 @@ window.__ModuleLoader__.load({
         attempt('locale', () =>
           ctx.effect(() => ctx.locale.register(NS, DICT), 'dsh-cockpit: dictionaries'),
         );
+        attempt('ether', () => ctx.effect(() => mountEther(), 'dsh-cockpit: ether sparks'));
         attempt('frame', () =>
           ctx.slots.inject('shell.overlay', () =>
             ctx.slots.register({ name: 'shell.overlay', id: 'bridge-frame', order: -20 }, safe(BridgeFrame)),

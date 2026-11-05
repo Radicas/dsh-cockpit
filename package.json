@@ -1,6 +1,6 @@
 {
   "name": "dsh-cockpit",
-  "version": "16.12.0",
+  "version": "16.13.0",
   "private": true,
   "type": "module",
   "description": "Futuristic bridge shell for DSH Web: live AI pipeline telemetry (input>reason>generate pulse), context arc, HUD composer, deep-space palette.",
@@ -32,6 +32,7 @@
   },
   "repository": "github:Radicas/dsh-cockpit",
   "scripts": {
-    "selfcheck": "node selfcheck.cjs"
+    "selfcheck": "node selfcheck.cjs",
+    "ethercheck": "node ethercheck.cjs"
   }
 }
