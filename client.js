@@ -451,8 +451,12 @@ window.__ModuleLoader__.load({
 
       '.dsh-br-panel{position:relative;padding:11px 12px 10px;background:' + PANEL + ';border:' + HAIR + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 0 24px rgba(56,189,248,.04);display:flex;flex-direction:column;min-height:0}',
       '.dsh-br-panel[data-grow="1"]{flex:1 1 auto}',
-      '.dsh-br-panel-head{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:' + STEEL + ';margin-bottom:6px;flex:none}',
+      '.dsh-br-panel-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:' + STEEL + ';margin-bottom:6px;flex:none}',
       '.dsh-br-panel-head b{color:' + AZ + ';font-weight:600;font-variant-numeric:tabular-nums}',
+      /* One focal figure per panel. Everything else in the panel is 11px or 9px,
+         so the eye lands here first instead of on eight equal-weight rows. */
+      '.dsh-br-headval{font-size:14px;color:' + ICE + ';letter-spacing:.04em}',
+      '.dsh-br-headmute{font-size:9px;color:rgba(148,183,208,.55);letter-spacing:.14em}',
 
       /* agent status + split */
       '.dsh-br-live{display:flex;align-items:center;gap:8px;margin-bottom:7px}',
@@ -464,16 +468,17 @@ window.__ModuleLoader__.load({
       '.dsh-br-failrow{color:#ff9d9d;cursor:' + CUR_INSPECT + ',help}',
       '.dsh-br-failrow b{color:#ffbaba;font-weight:600;font-variant-numeric:tabular-nums}',
       '.dsh-br-jump[data-k="latest"][data-unread="true"]{animation:dsh-br-pulse .9s ease-in-out infinite;border-color:rgba(87,216,255,.9);background:rgba(87,216,255,.22);color:#dff2ff}',
-      '.dsh-br-live-state{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:' + STEEL + '}',
+      '.dsh-br-live-state{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:' + STEEL + '}',
       '.dsh-br-live-state[data-live="run"]{color:#8ce8b0}',
       '.dsh-br-live-state[data-live="input"]{color:#ffd79a}',
-      '.dsh-br-live-count{margin-left:auto;font-size:12px;color:' + ICE + ';font-variant-numeric:tabular-nums}',
+      '.dsh-br-live-count{margin-left:auto;font-size:11px;color:' + ICE + ';font-variant-numeric:tabular-nums;letter-spacing:.06em;' +
+        'min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dsh-br-split{display:flex;gap:1px;height:8px;overflow:hidden}',
       '.dsh-br-split i{display:block;height:100%;transition:width .8s ease}',
       '.dsh-br-split i[data-k="llm"]{background:linear-gradient(90deg,rgba(87,216,255,.5),' + AZ + ')}',
       '.dsh-br-split i[data-k="tool"]{background:linear-gradient(90deg,rgba(139,124,246,.5),' + VIOLET + ')}',
       '.dsh-br-split i[data-k="rest"]{background:rgba(87,216,255,.08)}',
-      '.dsh-br-srow{display:flex;gap:8px;margin-top:8px;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:' + STEEL + '}',
+      '.dsh-br-srow{display:flex;gap:8px;margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:' + STEEL + '}',
       '.dsh-br-srow b{color:' + ICE + ';font-weight:500;font-variant-numeric:tabular-nums;margin-left:3px}',
       '.dsh-br-key{display:inline-block;width:6px;height:6px;margin-right:4px;vertical-align:1px}',
       '.dsh-br-key[data-k="llm"]{background:' + AZ + '}',
@@ -485,8 +490,8 @@ window.__ModuleLoader__.load({
          rail. A categorical state has no honest ordinal axis, and every
          position-based draft was quietly inventing one. */
       '.dsh-br-org-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex:none}',
-      '.dsh-br-org-phase{font-size:10.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#dff2ff;flex:none}',
-      '.dsh-br-org-metric{margin-left:auto;font-size:10.5px;letter-spacing:.1em;' +
+      '.dsh-br-org-phase{font-size:14px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#dff2ff;flex:none}',
+      '.dsh-br-org-metric{margin-left:auto;font-size:11px;letter-spacing:.1em;' +
         'color:rgba(148,183,208,.8);font-variant-numeric:tabular-nums;flex:none}',
       '.dsh-br-org{flex:none;width:32px;height:32px;color:' + AZ + ';overflow:visible;' +
         'transform:scale(calc(.88 + .22*var(--dsh-live,0)));transition:transform .5s ease}',
@@ -550,11 +555,11 @@ window.__ModuleLoader__.load({
       '.dsh-br-strip-wrap{position:relative;flex:1 1 auto;min-height:44px;display:flex}',
       '.dsh-br-strip{width:100%;height:100%;display:block}',
       '.dsh-br-strip .dsh-br-strip-head{animation:dsh-br-pulse 1s ease-in-out infinite}',
-      '.dsh-br-flash{position:absolute;top:-3px;font-size:9.5px;letter-spacing:.1em;color:#cfe9ff;white-space:nowrap;pointer-events:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 8px rgba(87,216,255,.85);font-style:italic}',
-      '.dsh-br-lane{position:absolute;left:2px;font-size:8.5px;letter-spacing:.24em;opacity:.55;z-index:1;pointer-events:none}',
+      '.dsh-br-flash{position:absolute;top:-3px;font-size:9px;letter-spacing:.1em;color:#cfe9ff;white-space:nowrap;pointer-events:none;max-width:120px;overflow:hidden;text-overflow:ellipsis;text-shadow:0 0 8px rgba(87,216,255,.85);font-style:italic}',
+      '.dsh-br-lane{position:absolute;left:2px;font-size:9px;letter-spacing:.24em;opacity:.55;z-index:1;pointer-events:none}',
 
       /* liveliness: eased numbers, delta ghosts, live-turn micro bar */
-      '.dsh-br-ghost{position:absolute;right:0;top:-7px;font-size:9.5px;font-style:normal;color:#8ce8b0;pointer-events:none;text-shadow:0 0 6px rgba(74,222,128,.5)}',
+      '.dsh-br-ghost{position:absolute;right:0;top:-7px;font-size:9px;font-style:normal;color:#8ce8b0;pointer-events:none;text-shadow:0 0 6px rgba(74,222,128,.5)}',
       '.dsh-br-urow{position:relative}',
       '.dsh-br-liveturn{display:flex;align-items:center;gap:6px;margin-top:7px}',
       '.dsh-br-ltbar{flex:1 1 auto;height:5px;display:flex;gap:1px;background:rgba(87,216,255,.06);overflow:hidden}',
@@ -562,11 +567,11 @@ window.__ModuleLoader__.load({
       '.dsh-br-ltbar i[data-k="think"]{background:' + AZ + '}',
       '.dsh-br-ltbar i[data-k="tool"]{background:' + VIOLET + '}',
       '.dsh-br-ltbar i[data-k="write"]{background:' + GREEN + '}',
-      '.dsh-br-lttxt{flex:none;font-size:10.5px;letter-spacing:.08em;color:rgba(148,183,208,.75);font-variant-numeric:tabular-nums}',
+      '.dsh-br-lttxt{flex:none;font-size:11px;letter-spacing:.08em;color:rgba(148,183,208,.75);font-variant-numeric:tabular-nums}',
       '.dsh-br-tools{margin-top:7px;display:flex;flex-direction:column;gap:2px;flex:0 0 auto;overflow:hidden;max-height:88px}',
-      '.dsh-br-tools-head{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(148,183,208,.55);margin-bottom:2px}',
+      '.dsh-br-tools-head{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(148,183,208,.55);margin-bottom:2px}',
       '.dsh-br-tools-head b{color:#b3a5ff;font-weight:500;margin-left:4px;font-variant-numeric:tabular-nums}',
-      '.dsh-br-trow{display:flex;align-items:center;gap:5px;font-size:10.5px;letter-spacing:.06em;color:rgba(148,183,208,.9)}',
+      '.dsh-br-trow{display:flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.06em;color:rgba(148,183,208,.9)}',
       '.dsh-br-tdot{flex:none;width:3px;height:3px;background:' + VIOLET + '}',
       '.dsh-br-tname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dsh-br-tdur{flex:none;color:#b3a5ff;font-variant-numeric:tabular-nums}',
@@ -576,13 +581,12 @@ window.__ModuleLoader__.load({
       '.dsh-br-trow[data-live="true"] .dsh-br-tdot{background:' + AZ + ';animation:dsh-br-pulse 1.1s ease-in-out infinite}',
       '.dsh-br-spark{display:flex;align-items:flex-end;gap:1px;height:12px;margin-top:5px}',
       '.dsh-br-spark i{flex:1 1 auto;min-width:0;background:linear-gradient(180deg,' + AZ + ',rgba(87,216,255,.22));opacity:.8}',
-      '.dsh-br-ltcalls{flex:none;font-size:10.5px;color:#b3a5ff;font-variant-numeric:tabular-nums}',
       '.dsh-br-arc[data-live="run"] .dsh-br-arc-fill{animation:dsh-br-breathe 1.6s ease-in-out infinite}',
-      '.dsh-br-arc-delta{font-size:10.5px;color:#8ce8b0;letter-spacing:.1em;font-variant-numeric:tabular-nums}',
+      '.dsh-br-arc-delta{font-size:11px;color:#8ce8b0;letter-spacing:.1em;font-variant-numeric:tabular-nums}',
 
       /* interaction: real jump buttons + hover precision tooltips */
       '.dsh-br-panel{pointer-events:auto}',
-      '.dsh-br-jump{flex:none;cursor:' + CUR_PTR + ',pointer;font:inherit;font-size:10.5px;letter-spacing:.16em;padding:2px 7px;border:1px solid rgba(255,196,107,.45);background:rgba(255,196,107,.08);color:#ffd79a;transition:background .18s ease,border-color .18s ease}',
+      '.dsh-br-jump{flex:none;cursor:' + CUR_PTR + ',pointer;font:inherit;font-size:11px;letter-spacing:.16em;padding:2px 6px;border:1px solid rgba(255,196,107,.45);background:rgba(255,196,107,.08);color:#ffd79a;transition:background .18s ease,border-color .18s ease}',
       '.dsh-br-jump:hover{background:rgba(255,196,107,.22);border-color:rgba(255,196,107,.9)}',
       '.dsh-br-jump[data-k="latest"]{border-color:rgba(87,216,255,.32);background:rgba(87,216,255,.06);color:#9fe4ff}',
       '.dsh-br-jump[data-k="latest"]:hover{background:rgba(87,216,255,.16);border-color:rgba(87,216,255,.7)}',
@@ -605,7 +609,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-arc-sub[data-hover="true"]{letter-spacing:.1em}',
       '.dsh-br-arc-pct{font-size:22px;color:' + ICE + ';font-variant-numeric:tabular-nums;letter-spacing:.04em}',
       '.dsh-br-arc-pct[data-hot="true"]{color:#ffd79a}',
-      '.dsh-br-arc-sub{font-size:11px;letter-spacing:.18em;color:' + STEEL + ';margin-top:3px;font-variant-numeric:tabular-nums}',
+      '.dsh-br-arc-sub{font-size:11px;letter-spacing:.18em;color:' + STEEL + ';margin-top:3px;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
 
       /* stacked composition + rows */
       '.dsh-br-stack{display:flex;gap:1px;height:8px;overflow:hidden;margin-bottom:7px}',
@@ -622,7 +626,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-caret-mini{color:' + AZ + ';animation:dsh-br-caret 1.1s steps(1) infinite}',
 
       /* --- telemetry chips (dock) ---------------------------------------- */
-      '.dsh-br-chip{display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 11px;font-size:11.5px;line-height:1;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;color:' + STEEL + ';background:' + PANEL + ';border:1px solid rgba(87,216,255,.24);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);pointer-events:none;user-select:none;-webkit-user-select:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
+      '.dsh-br-chip{display:inline-flex;align-items:center;gap:7px;height:22px;padding:0 11px;font-size:11px;line-height:1;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;color:' + STEEL + ';background:' + PANEL + ';border:1px solid rgba(87,216,255,.24);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);pointer-events:none;user-select:none;-webkit-user-select:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
       '.dsh-br-chip b{color:' + ICE + ';font-weight:600;font-variant-numeric:tabular-nums}',
       '.dsh-br-chip-dot{flex:none;width:4px;height:4px;border-radius:50%;background:' + AZ + ';box-shadow:0 0 6px rgba(87,216,255,.85);animation:dsh-br-pulse 2.6s ease-in-out infinite}',
 
@@ -631,7 +635,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-vector-ruler{position:relative;flex:1 1 auto;height:100%;overflow:hidden;background:repeating-linear-gradient(90deg,rgba(87,216,255,.3) 0 1px,transparent 1px 26px);animation:dsh-br-ruler 2.6s linear infinite;-webkit-mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent);mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}',
       '.dsh-br-vector-read{color:' + ICE + ';font-variant-numeric:tabular-nums}',
       '.dsh-br-vector-led{flex:none;width:5px;height:5px;border-radius:50%;background:' + AZ + ';box-shadow:0 0 7px rgba(87,216,255,.9);animation:dsh-br-pulse 2.2s ease-in-out infinite}',
-      '.dsh-br-vector-msg{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + ICE + ';font-size:11.5px;letter-spacing:.14em}',
+      '.dsh-br-vector-msg{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:' + ICE + ';font-size:11px;letter-spacing:.14em}',
       '.dsh-br-vector-msg b{font-weight:600;font-variant-numeric:tabular-nums}',
       '.dsh-br-vector-right{flex:none;color:#8fa9c2;font-variant-numeric:tabular-nums}',
       '.dsh-br-vector[data-p="ask"] .dsh-br-vector-msg{color:#ffd79a}',
@@ -645,7 +649,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-vector[data-p="idle"] .dsh-br-vector-led{background:#5b7086;box-shadow:none;animation:dsh-br-breathe 3.2s ease-in-out infinite}',
       '.dsh-br-vector[data-p="idle"] .dsh-br-vector-ruler{animation-play-state:paused;opacity:.3}',
 
-      '.dsh-br-deck{display:flex;align-items:center;gap:9px;flex:1 1 340px;min-width:0;margin:3px 0 0;padding:6px 13px 5px;font-size:12px;line-height:1;letter-spacing:.18em;text-transform:uppercase;color:' + STEEL + ';background:' + PANEL + ';border:1px solid rgba(87,216,255,.2);border-top:1px solid rgba(87,216,255,.4);clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 100%,0 100%);box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:none;user-select:none;-webkit-user-select:none;overflow:hidden;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
+      '.dsh-br-deck{display:flex;align-items:center;gap:9px;flex:1 1 340px;min-width:0;margin:3px 0 0;padding:6px 13px 5px;font-size:11px;line-height:1;letter-spacing:.18em;text-transform:uppercase;color:' + STEEL + ';background:' + PANEL + ';border:1px solid rgba(87,216,255,.2);border-top:1px solid rgba(87,216,255,.4);clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 100%,0 100%);box-shadow:0 8px 24px rgba(0,0,0,.3);pointer-events:none;user-select:none;-webkit-user-select:none;overflow:hidden;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
       '.dsh-br-led{flex:none;width:6px;height:6px;border-radius:50%;background:#5b7086;box-shadow:0 0 7px rgba(91,112,134,.85)}',
       '.dsh-br-led[data-live="run"]{background:' + GREEN + ';box-shadow:0 0 8px rgba(74,222,128,.9);animation:dsh-br-pulse 1.4s ease-in-out infinite}',
       '.dsh-br-led[data-live="input"]{background:' + AMBER + ';box-shadow:0 0 8px rgba(255,196,107,.9);animation:dsh-br-pulse .9s ease-in-out infinite}',
@@ -683,11 +687,11 @@ window.__ModuleLoader__.load({
       '.dsh-br-boot-ring{width:84px;height:84px}',
       '.dsh-br-boot-ring circle{fill:none;stroke:' + AZ + ';stroke-width:1.4;stroke-dasharray:220;animation:dsh-br-draw 1.1s ease-out forwards}',
       '.dsh-br-boot-ring circle.inner{stroke:' + ICE + ';stroke-width:.9;opacity:.65;animation-delay:.25s}',
-      '.dsh-br-boot-lines{display:flex;flex-direction:column;gap:5px;font-size:12.5px;letter-spacing:.14em;color:' + STEEL + '}',
+      '.dsh-br-boot-lines{display:flex;flex-direction:column;gap:5px;font-size:11px;letter-spacing:.14em;color:' + STEEL + '}',
       '.dsh-br-boot-lines span{animation:dsh-br-fadein .3s ease both}',
       '.dsh-br-boot-bar{width:280px;height:2px;background:rgba(87,216,255,.12);overflow:hidden}',
       '.dsh-br-boot-bar i{display:block;height:100%;background:linear-gradient(90deg,rgba(87,216,255,.4),' + AZ + ');transform-origin:left;animation:dsh-br-load 1.4s ease-in-out infinite}',
-      '.dsh-br-boot-title{font-size:17px;letter-spacing:.62em;text-indent:.62em;text-transform:uppercase;color:' + ICE + ';text-shadow:0 0 14px rgba(87,216,255,.65);animation:dsh-br-fadein .45s ease both}',
+      '.dsh-br-boot-title{font-size:22px;letter-spacing:.62em;text-indent:.62em;text-transform:uppercase;color:' + ICE + ';text-shadow:0 0 14px rgba(87,216,255,.65);animation:dsh-br-fadein .45s ease both}',
 
       /* ================================================================== */
       /* host restyle — pinned to this DSH build's CSS-module hashes;       */
@@ -1358,7 +1362,7 @@ window.__ModuleLoader__.load({
           const agentPanel = h(
             'div',
             { className: 'dsh-br-panel' },
-            h('div', { className: 'dsh-br-panel-head' }, t('agent'), h('b', null, 'MK-IV')),
+            h('div', { className: 'dsh-br-panel-head' }, t('agent'), h('b', { className: 'dsh-br-headmute' }, 'MK-IV')),
             h(
               'div',
               { className: 'dsh-br-live' },
@@ -1367,10 +1371,11 @@ window.__ModuleLoader__.load({
               h(
                 'span',
                 { className: 'dsh-br-live-count' },
-                stats == null ? '\u2014' : 'T' + stats.turns + ' \u00B7 S' + stats.steps,
+                stats == null ? '\u2014' : 'T' + stats.turns + ' S' + stats.steps,
               ),
-              liveCalls > 0 ? h('span', { className: 'dsh-br-ltcalls' }, '\u25B8' + liveCalls) : null,
-              waiting ? h('button', { type: 'button', className: 'dsh-br-jump', onClick: () => jumpTo('[data-approval-key]') }, t('goto')) : null,
+              waiting
+                ? h('button', { type: 'button', className: 'dsh-br-jump', title: t('goto'), onClick: () => jumpTo('[data-approval-key]') }, '\u2691')
+                : null,
               h('button', { type: 'button', className: 'dsh-br-jump', 'data-k': 'latest', 'data-unread': unread ? 'true' : 'false', title: t('latest'), onClick: () => jumpTo('[data-turn-tail]') }, '\u21BA'),
             ),
             failRow,
@@ -1554,7 +1559,7 @@ window.__ModuleLoader__.load({
           const flowPanel = h(
             'div',
             { className: 'dsh-br-panel', 'data-grow': '1' },
-            h('div', { className: 'dsh-br-panel-head' }, t('flow'), h('b', null, totalTokens === 0 ? '\u2014' : fmt(totalTokens))),
+            h('div', { className: 'dsh-br-panel-head' }, t('flow'), h('b', null, decode == null ? '\u2014' : decode.toFixed(1) + ' t/s')),
             h(
               'div',
               { className: 'dsh-br-org-row' },
@@ -1693,7 +1698,7 @@ window.__ModuleLoader__.load({
           const ctxPanel = h(
             'div',
             { className: 'dsh-br-panel' },
-            h('div', { className: 'dsh-br-panel-head', title: arcTip }, t('ctx'), h('b', null, cap ? fmt(cap) : '\u2014')),
+            h('div', { className: 'dsh-br-panel-head', title: arcTip }, t('ctx'), h('b', { className: 'dsh-br-headval' }, cap ? fmt(cap) : '\u2014')),
             h(
               'div',
               { className: 'dsh-br-arc', 'data-live': live },
@@ -1712,7 +1717,7 @@ window.__ModuleLoader__.load({
               ),
               h(
                 'div',
-                null,
+                { style: { minWidth: 0 } },
                 h('div', { className: 'dsh-br-arc-pct', 'data-hot': hot ? 'true' : 'false' }, pct == null ? '--' : pct.toFixed(1) + '%'),
                 h(
                   'div',
@@ -1741,7 +1746,7 @@ window.__ModuleLoader__.load({
           const mixPanel = h(
             'div',
             { className: 'dsh-br-panel', 'data-grow': '1' },
-            h('div', { className: 'dsh-br-panel-head' }, t('compose'), h('b', null, mix == null ? '\u2014' : fmt(mixTotal))),
+            h('div', { className: 'dsh-br-panel-head' }, t('compose'), h('b', { className: 'dsh-br-headval' }, mix == null ? '\u2014' : fmt(mixTotal))),
             h(
               'div',
               { className: 'dsh-br-stack' },
@@ -1764,7 +1769,7 @@ window.__ModuleLoader__.load({
           const usePanel = usage == null ? null : h(
             'div',
             { className: 'dsh-br-panel' },
-            h('div', { className: 'dsh-br-panel-head' }, t('usage'), h('b', null, fmt(totalTokens))),
+            h('div', { className: 'dsh-br-panel-head' }, t('usage'), h('b', { className: 'dsh-br-headval' }, fmt(totalTokens))),
             h(URow, { key: 'uo', name: t('out'), color: AZ, value: usage.outputTokens, max: Math.max(1, totalTokens) }),
             h(URow, { key: 'ui', name: t('in'), color: '#6d8ba3', value: usage.uncachedInputTokens, max: Math.max(1, totalTokens) }),
             h(URow, { key: 'ur', name: t('read'), color: GREEN, value: usage.cacheReadTokens, max: Math.max(1, totalTokens) }),
