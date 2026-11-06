@@ -601,14 +601,14 @@ window.__ModuleLoader__.load({
       '@media (max-width:900px){.dsh-br-pill{display:none}}',
 
       /* --- fixed side instrument columns (session-scoped data) ---------- */
-      '.dsh-br-inst{position:fixed;top:92px;bottom:200px;z-index:60;display:flex;flex-direction:column;gap:11px;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;transition:left .25s ease}',
+      '.dsh-br-inst{position:fixed;top:92px;bottom:200px;z-index:60;display:flex;flex-direction:column;gap:11px;overflow:hidden;pointer-events:none;user-select:none;-webkit-user-select:none;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}',
       '.dsh-br-inst[data-side="left"]{left:296px;width:220px;display:none}',
       '.dsh-br-inst[data-side="right"]{right:16px;width:248px;display:none}',
       '@media (min-width:1520px){.dsh-br-inst[data-side="left"]{display:flex}}',
       '@media (min-width:1330px){[data-sidebar-collapsed] .dsh-br-inst[data-side="left"]{display:flex}}',
       '@media (min-width:1440px){.dsh-br-inst[data-side="right"]{display:flex}}',
 
-      '.dsh-br-panel{position:relative;padding:11px 12px 10px;background:' + PANEL + ';border:' + HAIR + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 0 24px rgba(56,189,248,.04);display:flex;flex-direction:column;min-height:0}',
+      '.dsh-br-panel{position:relative;padding:11px 12px 10px;background:' + PANEL + ';border:' + HAIR + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 0 24px rgba(56,189,248,.04);display:flex;flex-direction:column;min-height:0;overflow:hidden}',
       '.dsh-br-panel[data-grow="1"]{flex:1 1 auto}',
       '.dsh-br-panel-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:' + STEEL + ';margin-bottom:6px;flex:none}',
       '.dsh-br-panel-head b{color:' + AZ + ';font-weight:600;font-variant-numeric:tabular-nums}',
@@ -1499,7 +1499,10 @@ window.__ModuleLoader__.load({
             if (frame == null) return undefined;
             const read = () => {
               const px = parseFloat((frame.style.gridTemplateColumns || '').split(' ')[0]);
-              setSidebarPx(Number.isFinite(px) ? px : null);
+              // Only trust a plausible sidebar width. A stray 0 or a huge value
+              // would fling the left column over the conversation; fall back to
+              // the CSS default instead of believing it.
+              setSidebarPx(Number.isFinite(px) && px >= 120 && px <= 560 ? px : null);
             };
             read();
             const observer = new MutationObserver(read);
