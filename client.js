@@ -578,13 +578,6 @@ window.__ModuleLoader__.load({
       '.wSkVaW_root .wSkVaW_crumbCurrent,.JObwrW_panel{cursor:inherit}',
       '.wSkVaW_root.wSkVaW_root{background-color:#04070d;background-image:var(--dsh-sky,linear-gradient(0deg,#050b16,#03060c));background-size:cover;background-position:center;background-repeat:no-repeat}',
       '.wSkVaW_root[data-phase=active] .wSkVaW_composerSeat.wSkVaW_composerSeat{background:linear-gradient(180deg,rgba(4,8,15,0) 0px,rgba(4,8,15,.82) 44px)}',
-      /* The host promotes the composer seat with will-change:transform, which — like
-         transform itself — makes it the containing block for every position:fixed
-         descendant. Our side columns are registered into conversation.composer.dock,
-         i.e. inside that seat, so they stopped escaping to the viewport and piled up
-         inside the composer. will-change:opacity keeps the compositor layer hint
-         without establishing a containing block. */
-      '.wSkVaW_composerSeat.wSkVaW_composerSeat{will-change:opacity}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
       '.dsh-br-edge[data-edge="top"]{top:6px}',
@@ -1494,6 +1487,59 @@ window.__ModuleLoader__.load({
           // rewrites that attribute on every collapse toggle or drag resize.
           const leftRef = useRef(null);
           const [sidebarPx, setSidebarPx] = useState(null);
+          const rightRef = useRef(null);
+          // ── Placement that does not trust position:fixed ─────────────────────
+          // These columns live inside conversation.composer.dock, and the host gives
+          // two ancestors a containing block for fixed descendants: the composer seat
+          // (will-change:transform) and the input row (container-type:inline-size).
+          // Whichever is nearest wins, so `top:92px;bottom:200px` can resolve against
+          // a ~50px row — negative height, columns invisible.
+          //
+          // So we stop assuming: lay each column at its containing block's origin,
+          // MEASURE where that landed, then translate to the viewport coordinate we
+          // want. Correct for any ancestor, present or future.
+          useEffect(() => {
+            if (typeof window === 'undefined') return undefined;
+            let raf = 0;
+            const place = () => {
+              const top = 92;
+              const height = Math.max(140, window.innerHeight - top - 200);
+              const rightEl = rightRef.current;
+              const targets = [
+                { el: leftRef.current, x: Math.round(sidebarPx == null ? 296 : sidebarPx) + 14 },
+                { el: rightEl, x: window.innerWidth - 16 - (rightEl == null ? 248 : rightEl.offsetWidth || 248) },
+              ];
+              for (const item of targets) {
+                const el = item.el;
+                if (el == null) continue;
+                if (el.offsetWidth === 0) continue; // hidden by a width breakpoint
+                el.style.top = '0px';
+                el.style.bottom = 'auto';
+                el.style.left = '0px';
+                el.style.right = 'auto';
+                el.style.height = height + 'px';
+                el.style.transform = 'none';
+                const rect = el.getBoundingClientRect();
+                el.style.transform =
+                  'translate(' + Math.round(item.x - rect.left) + 'px,' + Math.round(top - rect.top) + 'px)';
+              }
+            };
+            const schedule = () => {
+              if (raf !== 0) return;
+              raf = window.requestAnimationFrame(() => {
+                raf = 0;
+                place();
+              });
+            };
+            schedule();
+            const settle = setTimeout(schedule, 400);
+            window.addEventListener('resize', schedule);
+            return () => {
+              window.removeEventListener('resize', schedule);
+              if (raf !== 0 && typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(raf);
+              clearTimeout(settle);
+            };
+          }, [sidebarPx]);
           useEffect(() => {
             let frame = null;
             let node = leftRef.current;
@@ -2064,7 +2110,7 @@ window.__ModuleLoader__.load({
               agentPanel,
               flowPanel,
             ),
-            h('div', { className: 'dsh-br-inst', 'data-side': 'right' }, ctxPanel, mixPanel, usePanel),
+            h('div', { className: 'dsh-br-inst', 'data-side': 'right', ref: rightRef }, ctxPanel, mixPanel, usePanel),
           );
         }
 

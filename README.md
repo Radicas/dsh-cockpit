@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.13.2**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.13.3**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,26 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 面板定位改为自测量（v16.13.3）
+
+v16.13.2 修错了一次，记录在这：当时只拆掉了 composer seat 的 `will-change`，
+但输入行 `.uV2eYG_row{container-type:inline-size}` **同样生成包含块**。
+拆掉较高的那个，最近的包含块就变成只有约 50px 高的输入行，
+`top:92px;bottom:200px` 算出**负高度**，面板全部隐身。
+
+### 结论：不要跟宿主抢，改成自己量
+
+侧栏不再假设 `position:fixed` 相对视口。现在的做法：
+
+1. 把列摆到**包含块原点**（`top:0;left:0;right:auto;bottom:auto`），显式给高度
+2. **量** `getBoundingClientRect()`，得到它实际落在视口的哪里
+3. 用 `translate()` 补差值，落到目标视口坐标（y=92，左栏 x=侧栏宽+14，右栏 x=视口宽-16-栏宽）
+
+它对宿主将来新增任何 `transform / filter / will-change / contain` 都免疫，
+因为它不关心包含块是谁，只关心量出来的结果。窗口 resize 与侧栏宽度变化时重算。
+
+同时撤掉了 v16.13.2 对宿主 `will-change` 的改写——那是宿主为滚动性能加的，不该动。
 
 ## 面板掉到下面（v16.13.2）
 
