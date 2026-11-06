@@ -578,6 +578,13 @@ window.__ModuleLoader__.load({
       '.wSkVaW_root .wSkVaW_crumbCurrent,.JObwrW_panel{cursor:inherit}',
       '.wSkVaW_root.wSkVaW_root{background-color:#04070d;background-image:var(--dsh-sky,linear-gradient(0deg,#050b16,#03060c));background-size:cover;background-position:center;background-repeat:no-repeat}',
       '.wSkVaW_root[data-phase=active] .wSkVaW_composerSeat.wSkVaW_composerSeat{background:linear-gradient(180deg,rgba(4,8,15,0) 0px,rgba(4,8,15,.82) 44px)}',
+      /* The host promotes the composer seat with will-change:transform, which — like
+         transform itself — makes it the containing block for every position:fixed
+         descendant. Our side columns are registered into conversation.composer.dock,
+         i.e. inside that seat, so they stopped escaping to the viewport and piled up
+         inside the composer. will-change:opacity keeps the compositor layer hint
+         without establishing a containing block. */
+      '.wSkVaW_composerSeat.wSkVaW_composerSeat{will-change:opacity}',
       '.dsh-br-edge{position:absolute;pointer-events:none}',
       '.dsh-br-edge[data-edge="top"],.dsh-br-edge[data-edge="bottom"]{left:0;right:0;height:1px;background:linear-gradient(90deg,transparent 2%,' + AZ_DIM + ' 18%,' + AZ + ' 50%,' + AZ_DIM + ' 82%,transparent 98%);opacity:.7}',
       '.dsh-br-edge[data-edge="top"]{top:6px}',
@@ -1507,7 +1514,26 @@ window.__ModuleLoader__.load({
             read();
             const observer = new MutationObserver(read);
             observer.observe(frame, { attributes: true, attributeFilter: ['style'] });
-            return () => observer.disconnect();
+            // Sentinel: this column is position:fixed and must sit at the viewport top
+            // offset. If an ancestor ever gains a containing block (transform / filter /
+            // will-change / contain), fixed resolves against THAT element and the whole
+            // column silently relocates into the composer. Say so instead of going quiet.
+            const probe = setTimeout(() => {
+              const el = leftRef.current;
+              if (el == null || typeof el.getBoundingClientRect !== 'function') return;
+              const rect = el.getBoundingClientRect();
+              if (rect.width > 0 && Math.abs(rect.top - 92) > 48) {
+                console.warn(
+                  '[dsh-cockpit] instrument column is not viewport-anchored (top=' +
+                    Math.round(rect.top) +
+                    ') — an ancestor now establishes a containing block',
+                );
+              }
+            }, 600);
+            return () => {
+              observer.disconnect();
+              clearTimeout(probe);
+            };
           }, []);
 
           // LEFT — AGENT panel ------------------------------------------------

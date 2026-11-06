@@ -2,7 +2,7 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.13.0**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.13.2**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
@@ -16,6 +16,43 @@ v5-v5.3 的 token 累计曲线因只能表现"步结束跳变"被 v6 的阶段�
 侧柱数据源：`useProjection('sessionStats' | 'tokenUsage' | 'contextPressure' |
 'contextBreakdown')` + `useSessionStatus` + `useInput`（草稿/提交相位）+
 `useChat`（`legacy.partial` 流式增量、`legacy.runningCalls` 在跑工具）。
+
+## 面板掉到下面（v16.13.2）
+
+现象：所有侧栏面板跑到对话区底部、挤在输入框那一带。
+
+### 根因是宿主的一行 `will-change`
+
+```
+.wSkVaW_composerSeat{ ... will-change:transform; position:sticky; bottom:0 }
+```
+
+`will-change:transform` 和 `transform` 一样，**会把元素变成 `position:fixed` 子元素的包含块**。
+我们的侧栏注册在 `conversation.composer.dock`——输入框底座内部，于是 `position:fixed`
+不再相对视口，而是相对**贴着对话区底部的底座**。所有面板一起掉下去。
+
+### 修法：换一个不生成包含块的图层提示
+
+不能直接删 `will-change`，那是宿主为滚动性能加的图层提升。改成 **`will-change:opacity`**：
+
+| 值 | 提升图层 | 生成包含块 |
+|---|---|---|
+| `transform` | ✓ | **✓ 会** |
+| `opacity` | ✓ | ✗ 不会 |
+
+`opacity` 只创建层叠上下文，不创建包含块，所以图层保留、`fixed` 恢复。
+
+### 加了运行时哨兵
+
+这类故障是**静默**的：DOM 正常、React 正常、控制台干净，只有位置错。
+现在挂载 600ms 后测一次左侧栏的 `getBoundingClientRect().top`，偏离 `92px` 超过 48px 就在
+控制台喊一声，并说明原因。下次宿主再加任何 `transform/filter/will-change/contain` 都会立刻暴露。
+
+### 附带修掉的
+
+- 去掉 `left` 过渡：加载时两栏会从默认位置"滑"到实测侧栏宽度，看起来像面板在飞
+- 侧栏宽度测量加合法性钳制（120–560px），异常值退回 CSS 默认，不把左栏甩到对话中间
+- 列与面板加溢出裁剪
 
 ## 以太粒子（v16.13）
 
