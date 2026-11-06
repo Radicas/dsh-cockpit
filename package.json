@@ -1,8 +1,9 @@
 {
   "name": "dsh-cockpit",
-  "version": "16.13.3",
+  "version": "16.14.0",
   "private": true,
   "type": "module",
+  "license": "MIT",
   "description": "Futuristic bridge shell for DSH Web: live AI pipeline telemetry (input>reason>generate pulse), context arc, HUD composer, deep-space palette.",
   "exports": {
     ".": "./index.js",

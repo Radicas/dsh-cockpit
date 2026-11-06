@@ -15,7 +15,9 @@ const ctxStub = () => ({
   createLinearGradient: () => ({ addColorStop: () => {} }),
   createRadialGradient: () => ({ addColorStop: () => {} }),
   fillRect: () => {}, save: () => {}, restore: () => {}, translate: () => {}, scale: () => {},
-  beginPath: () => {}, arc: () => {}, fill: () => {},
+  rotate: () => {}, setTransform: () => {}, clearRect: () => {},
+  beginPath: () => {}, arc: () => {}, fill: () => {}, stroke: () => {},
+  moveTo: () => {}, lineTo: () => {},
 });
 global.document = {
   addEventListener: () => {},

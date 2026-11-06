@@ -2,12 +2,44 @@
 
 给 DeepSeek Harness Web 对话界面套上「未来舰桥」外壳。纯客户端 UI 插件，不改任何业务逻辑。
 
-当前版本 **v16.13.3**（2026-11-05），实测对齐 DSH `0.1.0` 系；升级 DSH 后若类名失配，见下文《哈希类名重新对齐》。
+当前版本 **v16.14.0**（2026-11-06），实测对齐 DSH `0.2.2-rc.1`；升级 DSH 后若类名失配，见《宿主改造》一节的重新对齐方法。
 
 > v15.0.0 事故记录：取景框探针（composer dock 内 flex 1 1 100%）把整行挤扁，全局布局错乱，
 > 已整体回滚。另发现星点 CSS 括号不配对（rgba 吞掉渐变收尾）——v15.1 起重做并加
 > **构建期 CSS 括号平衡自检**（localhost/127.0.0.1 下 console.error 报警）。
 > 装饰件改为**一件一装一验**：v15.1.0 = 星野底（仅此一件，纯背景层，零布局风险）。
+
+## 快速安装（给别人用就看这一节）
+
+只支持 **DSH Web**（纯客户端插件），不需要编译。把仓库链接丢给对方的 DSH 即可，也可以自己执行：
+
+```
+plugin_manager install_bundle github:Radicas/dsh-cockpit
+```
+
+不想发 GitHub 链接，就把 GitHub Releases 里的 `dsh-cockpit-16.14.0.tgz` 发给对方，用**绝对路径**安装：
+
+```
+plugin_manager install_bundle /绝对路径/dsh-cockpit-16.14.0.tgz
+```
+
+装好后刷新页面，在 Settings → Plugins 里能看到 **DSH Bridge**。卸载：
+
+```
+plugin_manager remove_bundle dsh-cockpit
+```
+
+实测对齐 DSH `0.2.2-rc.1`。对方的 DSH 版本不同也能装上，但宿主样式覆写（输入卡片、消息气泡、上下文圆环）可能不再命中；侧栏 HUD 等插件自有 UI 不受影响，重新对齐方法见《宿主改造》。
+
+## 星空烘焙重做（v16.14）
+
+底图仍是**一张** 2048×1152 的离屏 canvas（一次纹理上传、一次 blit），但内容重做：
+银河带 + 尘埃带、五个星云、两个远星系、三个疏散星团、幂律星场，外加手放的亮星。
+星场刻意沿银河带加密（约 1.6k 颗，稠密带压在稀疏深场上），亮部都收在中央 80% 内，
+避免 `background-size: cover` 在非常规比例下裁掉主体。
+
+自检同步：[selfcheck.cjs](selfcheck.cjs) / [ethercheck.cjs](ethercheck.cjs) 的假 canvas
+补齐了 `rotate/setTransform/clearRect/moveTo/lineTo/stroke` 与 `toDataURL`，两个门禁仍全过。
 
 ## 设计原则（v5）
 
@@ -569,10 +601,15 @@ interval + `subscribeBeat` 订阅分发，首个订阅者启动、最后一个�
 在 DSH 会话里用插件管理器（或从 GitHub 安装）：
 
 ```
-plugin_manager install_bundle Radicas/dsh-cockpit        # GitHub
-plugin_manager install_bundle /绝对路径/dsh-cockpit        # 本地 clone
+plugin_manager install_bundle github:Radicas/dsh-cockpit      # GitHub（注意 github: 前缀）
+plugin_manager install_bundle /绝对路径/dsh-cockpit-16.14.0.tgz  # 代码包
+plugin_manager install_bundle /绝对路径/dsh-cockpit             # 本地 clone
 plugin_manager remove_bundle dsh-cockpit
 ```
+
+裸写 `Radicas/dsh-cockpit` 会被当成 npm 包名而拒绝，必须带 `github:` 前缀或写完整
+`https://github.com/Radicas/dsh-cockpit`。本地路径必须是**绝对路径**；代码包必须是
+`npm pack` 打出的 `.tgz`（GitHub 自动生成的 zip 源码包不能直接装）。
 
 `install_bundle` 会自动把本 bundle 加入 profile 的 `dsh.profile.bundles`，无需手工挂
 patch；仓库里的 `cordis.patch.yml` 只是 bundle 层的占位记录，可以不管。
@@ -581,4 +618,4 @@ patch；仓库里的 `cordis.patch.yml` 只是 bundle 层的占位记录，可�
 
 ## 许可
 
-未附 LICENSE 文件，**默认保留所有权利**（可个人使用/阅读，未经许可再分发）。
+MIT，见仓库根目录 [LICENSE](LICENSE)：可自由使用、修改、再分发，保留版权与许可声明即可。

@@ -36,6 +36,15 @@ const ctx2d = new Proxy(
       if (key === 'stroke') return () => drawCalls.push('stroke');
       if (key === 'moveTo') return () => drawCalls.push('moveTo');
       if (key === 'lineTo') return () => drawCalls.push('lineTo');
+      // The sky bake also runs inside this harness (it is part of the same
+      // client module); give it the same no-op surface it expects.
+      if (key === 'createLinearGradient' || key === 'createRadialGradient') {
+        return () => ({ addColorStop() {} });
+      }
+      if (key === 'save' || key === 'restore' || key === 'translate' || key === 'scale' ||
+          key === 'rotate' || key === 'fillRect') {
+        return () => {};
+      }
       if (typeof key === 'string' && /Style$|^lineWidth$|^globalCompositeOperation$/.test(key)) return undefined;
       return undefined;
     },
@@ -57,6 +66,9 @@ function makeCanvas() {
     },
     getContext() {
       return ctx2d;
+    },
+    toDataURL() {
+      return 'data:image/png;base64,AA';
     },
     parentNode: null,
   };

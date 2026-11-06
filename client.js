@@ -268,11 +268,18 @@ window.__ModuleLoader__.load({
       [48, 88, 1], [77, 90, 0], [6, 95, 0], [92, 86, 0],
     ];
 
-    /** Bake the whole sky into ONE bitmap (base wash, three nebulae, vignette,
-     *  seeded far/mid tiers, hand near-stars) and hand it to CSS via
-     *  --dsh-sky. Rationale: 131 live gradient layers re-raster across a Retina
-     *  viewport and dominate paint; a frozen image is one texture upload and
-     *  a single blit. Runs once per page, off the critical path. */
+    /** Bake the whole sky into ONE bitmap — base wash, Milky Way band with dust
+     *  lanes, five nebulae, two distant galaxies, three open clusters and a
+     *  power-law star field with hand-placed hero stars — then hand it to CSS
+     *  via --dsh-sky. Rationale: live gradient layers re-raster across a Retina
+     *  viewport and dominate paint; a frozen image is one texture upload and a
+     *  single blit. Runs once per page, off the critical path.
+     *
+     *  Density and colour are code-level knobs. The field is deliberately
+     *  band-biased (~1.6k stars: a dense Galactic band over a sparse deep
+     *  field) so it reads as depth instead of an even sprinkle. Keep the
+     *  brightest features inside the central 80% because background-size:
+     *  cover crops the edges on odd aspect ratios. */
     function bakeSkyURL() {
       const cv = document.createElement('canvas');
       const W = (cv.width = 2048);
@@ -280,81 +287,191 @@ window.__ModuleLoader__.load({
       const g = cv.getContext('2d');
       if (g == null) return '';
       const S = W / 1440;
-      const base = g.createLinearGradient(0, H, 0, 0);
-      base.addColorStop(0, '#050b16');
-      base.addColorStop(1, '#03060c');
+      const TAU = Math.PI * 2;
+      let seed = 0x5f3a91 >>> 0;
+      const rnd = function () {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+      // Box-Muller: clusters and the band need a soft falloff, not a box.
+      const gauss = function () {
+        return Math.sqrt(-2 * Math.log(1 - rnd() * 0.9999)) * Math.cos(TAU * rnd());
+      };
+      const bandTop = function (x) {
+        const t = x / W;
+        return H * (0.15 + t * 0.62 + Math.sin(t * Math.PI) * 0.08);
+      };
+      // Soft rotated ellipse — one gradient fill for nebulae/dust/galaxies.
+      const blob = function (x, y, r, flatten, rot, inner, outer) {
+        g.save();
+        g.translate(x, y);
+        g.rotate(rot);
+        g.scale(1, flatten);
+        const rg = g.createRadialGradient(0, 0, 0, 0, 0, r);
+        rg.addColorStop(0, inner);
+        rg.addColorStop(0.55, inner);
+        rg.addColorStop(1, outer);
+        g.globalAlpha = 1;
+        g.fillStyle = rg;
+        g.beginPath();
+        g.arc(0, 0, r, 0, TAU);
+        g.fill();
+        g.restore();
+      };
+
+      // 1) Base wash — almost black at the top, a touch warmer near the floor.
+      const base = g.createLinearGradient(0, 0, 0, H);
+      base.addColorStop(0, '#02050d');
+      base.addColorStop(0.55, '#040a15');
+      base.addColorStop(1, '#050b18');
       g.fillStyle = base;
       g.fillRect(0, 0, W, H);
+
+      // 2) Galactic band: soft indigo glow, then dark dust lanes across it.
+      for (let i = 0; i < 14; i++) {
+        const x = ((i + 0.5) / 14) * W;
+        const y = bandTop(x);
+        blob(
+          x, y, (110 + rnd() * 150) * S, 0.55, -0.42,
+          'rgba(120,160,255,' + (0.012 + rnd() * 0.014).toFixed(3) + ')',
+          'rgba(120,160,255,0)',
+        );
+      }
+      for (let i = 0; i < 7; i++) {
+        const x = (0.08 + rnd() * 0.84) * W;
+        const y = bandTop(x) + (rnd() - 0.5) * 18 * S;
+        blob(
+          x, y, (55 + rnd() * 120) * S, 0.42, -0.42 + (rnd() - 0.5) * 0.2,
+          'rgba(1,3,8,' + (0.08 + rnd() * 0.06).toFixed(3) + ')',
+          'rgba(1,3,8,0)',
+        );
+      }
+
+      // 3) Nebulae — five low-alpha fields; the ember one is barely there.
       const nebs = [
-        [0.22, 0.24, 0.38, 0.26, '56,130,246', 0.09],
-        [0.68, 0.62, 0.3, 0.22, '87,216,255', 0.075],
-        [0.44, 0.4, 0.46, 0.3, '120,160,255', 0.055],
+        [0.18, 0.26, 0.46, 0.30, '64,110,235', 0.030],
+        [0.72, 0.64, 0.36, 0.24, '87,216,255', 0.028],
+        [0.47, 0.42, 0.54, 0.34, '120,160,255', 0.022],
+        [0.85, 0.20, 0.30, 0.20, '139,124,246', 0.025],
+        [0.12, 0.78, 0.28, 0.18, '40,180,170', 0.018],
       ];
       for (let i = 0; i < nebs.length; i++) {
         const q = nebs[i];
-        const rx = (q[2] * W) / 2;
-        const ry = (q[3] * H) / 2;
-        g.save();
-        g.translate(q[0] * W, q[1] * H);
-        g.scale(1, ry / rx);
-        const rg = g.createRadialGradient(0, 0, 0, 0, 0, rx);
-        rg.addColorStop(0, 'rgba(' + q[4] + ',' + q[5] + ')');
-        rg.addColorStop(1, 'rgba(' + q[4] + ',0)');
-        g.fillStyle = rg;
-        g.beginPath();
-        g.arc(0, 0, rx, 0, Math.PI * 2);
-        g.fill();
-        g.restore();
+        blob(
+          q[0] * W, q[1] * H, (q[2] * W) / 2, q[3] / q[2], 0,
+          'rgba(' + q[4] + ',' + q[5] + ')',
+          'rgba(' + q[4] + ',0)',
+        );
       }
-      const vg = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.72);
-      vg.addColorStop(0, 'rgba(2,4,8,0)');
-      vg.addColorStop(0.6, 'rgba(2,4,8,0)');
-      vg.addColorStop(1, 'rgba(2,4,8,.5)');
-      g.fillStyle = vg;
-      g.fillRect(0, 0, W, H);
-      const tier = function (n, seed, aLo, aHi, r, bias) {
-        let s = seed >>> 0;
-        const rnd = function () {
-          s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
-          return s / 4294967296;
-        };
-        g.fillStyle = '#dff2ff';
-        for (let i = 0; i < n; i++) {
-          const px = rnd() * 100;
-          let py = rnd() * 100;
-          const band = 12 + px * 0.72;
-          if (Math.abs(py - band) > 26 && rnd() < bias) py = Math.min(99, Math.max(1, band + (rnd() - 0.5) * 20));
-          g.globalAlpha = aLo + rnd() * (aHi - aLo);
+
+      // 4) Two distant galaxies: tiny tilted smudges, never hero props.
+      blob(0.3 * W, 0.64 * H, 46 * S, 0.38, -0.7, 'rgba(190,214,255,.10)', 'rgba(190,214,255,0)');
+      blob(0.66 * W, 0.22 * H, 34 * S, 0.34, 0.5, 'rgba(214,196,255,.08)', 'rgba(214,196,255,0)');
+
+      // 5) Open clusters: tighter clumps so the eye keeps finding structure.
+      const clusters = [
+        [0.34, 0.4, 46],
+        [0.58, 0.5, 38],
+        [0.76, 0.72, 30],
+      ];
+      for (let c = 0; c < clusters.length; c++) {
+        const cluster = clusters[c];
+        const cx = cluster[0] * W;
+        const cy = bandTop(cx) + (rnd() - 0.5) * 40 * S;
+        blob(cx, cy, cluster[2] * S * 2.4, 0.8, 0, 'rgba(223,242,255,.05)', 'rgba(223,242,255,0)');
+        for (let i = 0; i < cluster[2]; i++) {
+          const x = cx + gauss() * 26 * S;
+          const y = cy + gauss() * 22 * S;
+          g.globalAlpha = 0.18 + rnd() * 0.45;
+          g.fillStyle = 'rgb(223,242,255)';
           g.beginPath();
-          g.arc((px / 100) * W, (py / 100) * H, r * S, 0, Math.PI * 2);
+          g.arc(x, y, (0.25 + rnd() * 0.45) * S, 0, TAU);
           g.fill();
         }
+      }
+
+      // 6) Main field: three tiers, 45% pulled onto the band.
+      const palette = [
+        [223, 242, 255, 0.58],
+        [188, 216, 255, 0.2],
+        [255, 233, 201, 0.12],
+        [201, 255, 255, 0.06],
+        [255, 206, 178, 0.04],
+      ];
+      const pick = function () {
+        let r = rnd();
+        for (let i = 0; i < palette.length; i++) {
+          r -= palette[i][3];
+          if (r <= 0) return palette[i];
+        }
+        return palette[0];
       };
-      tier(70, 0x5f3a91, 0.1, 0.22, 0.5, 0.55);
-      tier(34, 0x2b7e14, 0.26, 0.45, 0.8, 0.6);
+      const tiers = [
+        [1250, 0.22, 0.55, 0.18, 0.5],
+        [300, 0.5, 0.95, 0.32, 0.72],
+        [70, 0.8, 1.6, 0.5, 0.95],
+      ];
+      for (let t = 0; t < tiers.length; t++) {
+        const tier = tiers[t];
+        for (let i = 0; i < tier[0]; i++) {
+          let x = rnd() * W;
+          let y = rnd() * H;
+          if (rnd() < 0.45) {
+            const along = rnd() * W;
+            x = along + gauss() * 30 * S;
+            y = bandTop(along) + gauss() * H * 0.07;
+          }
+          const col = pick();
+          g.globalAlpha = tier[3] + rnd() * (tier[4] - tier[3]);
+          g.fillStyle = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')';
+          g.beginPath();
+          g.arc(x, y, (tier[1] + rnd() * (tier[2] - tier[1])) * S, 0, TAU);
+          g.fill();
+        }
+      }
+
+      // 7) Hand-placed hero stars (STARS_T), with a soft halo on the bright ones.
       for (let i = 0; i < STARS_T.length; i++) {
         const p = STARS_T[i];
         const x = (p[0] / 100) * W;
         const y = (p[1] / 100) * H;
         if (p[2]) {
-          const rg = g.createRadialGradient(x, y, 0, x, y, 4.5 * S);
-          rg.addColorStop(0, 'rgba(223,242,255,.9)');
-          rg.addColorStop(0.35, 'rgba(223,242,255,.35)');
+          const rg = g.createRadialGradient(x, y, 0, x, y, 7 * S);
+          rg.addColorStop(0, 'rgba(223,242,255,.95)');
+          rg.addColorStop(0.28, 'rgba(223,242,255,.30)');
           rg.addColorStop(1, 'rgba(223,242,255,0)');
           g.globalAlpha = 1;
           g.fillStyle = rg;
           g.beginPath();
-          g.arc(x, y, 4.5 * S, 0, Math.PI * 2);
+          g.arc(x, y, 7 * S, 0, TAU);
           g.fill();
+          if (i % 3 === 0) {
+            g.strokeStyle = 'rgba(214,240,255,.16)';
+            g.lineWidth = 0.6 * S;
+            g.beginPath();
+            g.moveTo(x - 7 * S, y);
+            g.lineTo(x + 7 * S, y);
+            g.moveTo(x, y - 7 * S);
+            g.lineTo(x, y + 7 * S);
+            g.stroke();
+          }
         } else {
-          g.globalAlpha = 0.5;
+          g.globalAlpha = 0.55;
           g.fillStyle = '#dff2ff';
           g.beginPath();
-          g.arc(x, y, 0.75 * S, 0, Math.PI * 2);
+          g.arc(x, y, 0.8 * S, 0, TAU);
           g.fill();
         }
       }
+
+      // 8) Vignette.
+      const vg = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.72);
+      vg.addColorStop(0, 'rgba(2,4,8,0)');
+      vg.addColorStop(0.55, 'rgba(2,4,8,0)');
+      vg.addColorStop(1, 'rgba(2,4,8,.55)');
       g.globalAlpha = 1;
+      g.fillStyle = vg;
+      g.fillRect(0, 0, W, H);
       return cv.toDataURL('image/png');
     }
 
@@ -401,12 +518,12 @@ window.__ModuleLoader__.load({
         cps: '字/秒',
         heur: '估算',
         tokens: '令牌',
-        out: '输出',
+        outTok: '输出',
         cache: '缓存',
         ctx: '上下文',
         agent: '代理',
         llm: '推理',
-        tool: '工具',
+        toolTime: '工具',
         ttft: '首字',
         flow: '吞吐',
         rate: '流速',
@@ -475,12 +592,12 @@ window.__ModuleLoader__.load({
         cps: 'ch/s',
         heur: 'estimated',
         tokens: 'TOK',
-        out: 'OUT',
+        outTok: 'OUT',
         cache: 'CACHE',
         ctx: 'CTX',
         agent: 'AGENT',
         llm: 'LLM',
-        tool: 'TOOL',
+        toolTime: 'TOOL',
         ttft: 'TTFT',
         flow: 'FLOW',
         rate: 'RATE',
@@ -607,11 +724,49 @@ window.__ModuleLoader__.load({
       '@media (min-width:1520px){.dsh-br-inst[data-side="left"]{display:flex}}',
       '@media (min-width:1330px){[data-sidebar-collapsed] .dsh-br-inst[data-side="left"]{display:flex}}',
       '@media (min-width:1440px){.dsh-br-inst[data-side="right"]{display:flex}}',
+      /* Vertical compacting: on a short window the two left panels cannot both
+         keep every row, and flex-shrink clips their bottom lines (AGENT's
+         live-turn row, FLOW's turn row). place() measures the real overflow
+         after setting the column height and drops secondary rows in stages,
+         so whatever text remains is never cut by the panel edge. */
+      '.dsh-br-inst[data-compact="1"] .dsh-br-spark{display:none}',
+      '.dsh-br-inst[data-compact="1"] .dsh-br-tools{max-height:40px}',
+      '.dsh-br-inst[data-compact="1"] .dsh-br-strip-wrap{min-height:32px}',
+      '.dsh-br-inst[data-compact="1"] .dsh-br-srow{margin-top:6px}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-tools{display:none}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-spark{display:none}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-strip-wrap{min-height:20px}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-srow{margin-top:5px}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-panel-head{margin-bottom:4px}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-live{margin-bottom:4px}',
+      '.dsh-br-inst[data-compact="2"] .dsh-br-liveturn{margin-top:4px}',
+      /* Left-column type scale. 220px is tight for live telemetry: the 11-14px
+         labels carried .16-.24em tracking and still overflowed the EN turn
+         line and long values. The left instruments now run one notch smaller
+         with much tighter tracking; the right column keeps its larger type. */
+      '.dsh-br-inst[data-side="left"] .dsh-br-panel-head{font-size:10px;letter-spacing:.14em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-headval{font-size:12px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-headmute{font-size:8px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-live-state{font-size:12px;letter-spacing:.1em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-live-count{font-size:10px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-srow{font-size:10px;letter-spacing:.06em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-srow b{font-size:10px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-org-phase{font-size:12px;letter-spacing:.1em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-org-metric{font-size:10px;letter-spacing:.03em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-liveturn{gap:4px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-ltbar{min-width:20px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-lttxt{font-size:9px;letter-spacing:.01em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-trow{font-size:10px;letter-spacing:.02em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-tools-head{font-size:8px;letter-spacing:.1em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-jump{font-size:10px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-empty{font-size:9px;letter-spacing:.18em}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-lane{font-size:8px}',
+      '.dsh-br-inst[data-side="left"] .dsh-br-flash{font-size:8px}',
 
       '.dsh-br-panel{position:relative;padding:11px 12px 10px;background:' + PANEL + ';border:' + HAIR + ';clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 0 24px rgba(56,189,248,.04);display:flex;flex-direction:column;min-height:0;overflow:hidden}',
       '.dsh-br-panel[data-grow="1"]{flex:1 1 auto}',
-      '.dsh-br-panel-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:' + STEEL + ';margin-bottom:6px;flex:none}',
-      '.dsh-br-panel-head b{color:' + AZ + ';font-weight:600;font-variant-numeric:tabular-nums}',
+      '.dsh-br-panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:' + STEEL + ';margin-bottom:6px;flex:none}',
+      '.dsh-br-panel-head b{color:' + AZ + ';font-weight:600;font-variant-numeric:tabular-nums;flex:none}',
       /* One focal figure per panel. Everything else in the panel is 11px or 9px,
          so the eye lands here first instead of on eight equal-weight rows. */
       '.dsh-br-headval{font-size:14px;color:' + ICE + ';letter-spacing:.04em}',
@@ -627,7 +782,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-failrow{color:#ff9d9d;cursor:' + CUR_INSPECT + ',help}',
       '.dsh-br-failrow b{color:#ffbaba;font-weight:600;font-variant-numeric:tabular-nums}',
       '.dsh-br-jump[data-k="latest"][data-unread="true"]{animation:dsh-br-pulse .9s ease-in-out infinite;border-color:rgba(87,216,255,.9);background:rgba(87,216,255,.22);color:#dff2ff}',
-      '.dsh-br-live-state{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:' + STEEL + '}',
+      '.dsh-br-live-state{font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:' + STEEL + ';flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dsh-br-live-state[data-live="run"]{color:#8ce8b0}',
       '.dsh-br-live-state[data-live="input"]{color:#ffd79a}',
       '.dsh-br-live-count{margin-left:auto;font-size:11px;color:' + ICE + ';font-variant-numeric:tabular-nums;letter-spacing:.06em;' +
@@ -637,7 +792,8 @@ window.__ModuleLoader__.load({
       '.dsh-br-split i[data-k="llm"]{background:linear-gradient(90deg,rgba(87,216,255,.5),' + AZ + ')}',
       '.dsh-br-split i[data-k="tool"]{background:linear-gradient(90deg,rgba(139,124,246,.5),' + VIOLET + ')}',
       '.dsh-br-split i[data-k="rest"]{background:rgba(87,216,255,.08)}',
-      '.dsh-br-srow{display:flex;gap:8px;margin-top:8px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:' + STEEL + '}',
+      '.dsh-br-srow{display:flex;gap:8px;margin-top:8px;min-width:0;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:' + STEEL + '}'+
+      '.dsh-br-srow>span{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dsh-br-srow b{color:' + ICE + ';font-weight:500;font-variant-numeric:tabular-nums;margin-left:3px}',
       '.dsh-br-key{display:inline-block;width:6px;height:6px;margin-right:4px;vertical-align:1px}',
       '.dsh-br-key[data-k="llm"]{background:' + AZ + '}',
@@ -648,10 +804,11 @@ window.__ModuleLoader__.load({
          membrane pattern, petal posture, core size — never in a position on a
          rail. A categorical state has no honest ordinal axis, and every
          position-based draft was quietly inventing one. */
-      '.dsh-br-org-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex:none}',
-      '.dsh-br-org-phase{font-size:14px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#dff2ff;flex:none}',
-      '.dsh-br-org-metric{margin-left:auto;font-size:11px;letter-spacing:.1em;' +
-        'color:rgba(148,183,208,.8);font-variant-numeric:tabular-nums;flex:none}',
+      '.dsh-br-org-row{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex:none;min-width:0;overflow:hidden}',
+      '.dsh-br-org-phase{font-size:14px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#dff2ff;flex:none;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+      '.dsh-br-org-metric{margin-left:auto;font-size:11px;letter-spacing:.1em;text-align:right;' +
+        'color:rgba(148,183,208,.8);font-variant-numeric:tabular-nums;flex:0 1 auto;min-width:0;' +
+        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
       '.dsh-br-org{flex:none;width:32px;height:32px;color:' + AZ + ';overflow:visible;' +
         'transform:scale(calc(.88 + .22*var(--dsh-live,0)));transition:transform .5s ease}',
       '.dsh-br-org-core{fill:currentColor;transform-box:fill-box;transform-origin:center;' +
@@ -720,13 +877,13 @@ window.__ModuleLoader__.load({
       /* liveliness: eased numbers, delta ghosts, live-turn micro bar */
       '.dsh-br-ghost{position:absolute;right:0;top:-7px;font-size:9px;font-style:normal;color:#8ce8b0;pointer-events:none;text-shadow:0 0 6px rgba(74,222,128,.5)}',
       '.dsh-br-urow{position:relative}',
-      '.dsh-br-liveturn{display:flex;align-items:center;gap:6px;margin-top:7px}',
-      '.dsh-br-ltbar{flex:1 1 auto;height:5px;display:flex;gap:1px;background:rgba(87,216,255,.06);overflow:hidden}',
+      '.dsh-br-liveturn{display:flex;align-items:center;gap:6px;margin-top:7px;min-width:0;overflow:hidden}',
+      '.dsh-br-ltbar{flex:1 1 auto;min-width:24px;height:5px;display:flex;gap:1px;background:rgba(87,216,255,.06);overflow:hidden}',
       '.dsh-br-ltbar i{display:block;height:100%;transition:width .3s ease}',
       '.dsh-br-ltbar i[data-k="think"]{background:' + AZ + '}',
       '.dsh-br-ltbar i[data-k="tool"]{background:' + VIOLET + '}',
       '.dsh-br-ltbar i[data-k="write"]{background:' + GREEN + '}',
-      '.dsh-br-lttxt{flex:none;font-size:11px;letter-spacing:.08em;color:rgba(148,183,208,.75);font-variant-numeric:tabular-nums}',
+      '.dsh-br-lttxt{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;letter-spacing:.08em;color:rgba(148,183,208,.75);font-variant-numeric:tabular-nums}',
       '.dsh-br-tools{margin-top:7px;display:flex;flex-direction:column;gap:2px;flex:0 0 auto;overflow:hidden;max-height:88px}',
       '.dsh-br-tools-head{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:rgba(148,183,208,.55);margin-bottom:2px}',
       '.dsh-br-tools-head b{color:#b3a5ff;font-weight:500;margin-left:4px;font-variant-numeric:tabular-nums}',
@@ -750,7 +907,7 @@ window.__ModuleLoader__.load({
       '.dsh-br-jump[data-k="latest"]{border-color:rgba(87,216,255,.32);background:rgba(87,216,255,.06);color:#9fe4ff}',
       '.dsh-br-jump[data-k="latest"]:hover{background:rgba(87,216,255,.16);border-color:rgba(87,216,255,.7)}',
       '.dsh-br-urow,.dsh-br-trow{cursor:' + CUR_INSPECT + ',help}',
-      '[data-approval-key].dsh-br-flash,[data-turn-tail].dsh-br-flash{animation:dsh-br-flashring 1.6s ease}',
+      '[data-approval-key].dsh-br-jumpflash,[data-turn-tail].dsh-br-jumpflash{animation:dsh-br-flashring 1.6s ease}',
       '@keyframes dsh-br-flashring{0%,55%{box-shadow:0 0 0 1px rgba(255,196,107,.75),0 0 22px rgba(255,196,107,.3)}100%{box-shadow:none}}',
       '.dsh-br-empty{display:flex;align-items:center;justify-content:center;height:100%;font-size:11px;letter-spacing:.3em;color:rgba(148,183,208,.4)}',
 
@@ -947,8 +1104,12 @@ window.__ModuleLoader__.load({
       '.uV2eYG_pending.uV2eYG_pending{background:' + AZ + '}',
       '.uV2eYG_dock.uV2eYG_dock{flex-wrap:wrap;row-gap:6px}',
       '.uV2eYG_retry.uV2eYG_retry{border-radius:4px;border-color:rgba(87,216,255,.4);color:#a5c0d6}',
-      '.Sixlwa_bubble.Sixlwa_bubble{border-radius:8px 8px 8px 2px;border:1px solid rgba(87,216,255,.16);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 84%,rgba(87,216,255,.10)),color-mix(in srgb,var(--dsw-specific-bubble) 86%,transparent));box-shadow:0 2px 12px rgba(0,0,0,.16)}',
-      '.Sixlwa_userStack .Sixlwa_bubble{border-radius:8px 8px 2px 8px;border-color:rgba(87,216,255,.42);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 72%,rgba(87,216,255,.26)),color-mix(in srgb,var(--dsw-specific-bubble) 78%,rgba(87,216,255,.14)));box-shadow:0 2px 14px rgba(2,10,20,.28),inset 0 0 18px rgba(56,189,248,.05)}',
+      /* User bubbles moved to the primitives package in DSH 0.2.x: the old
+         `Sixlwa_bubble` class is gone, but the element still publishes the
+         stable `data-message-bubble` attribute. Attribute selectors survive
+         CSS-module renames, so pin that instead of another hash. */
+      '[data-message-bubble][data-message-bubble]{border-radius:8px 8px 8px 2px;border:1px solid rgba(87,216,255,.16);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 84%,rgba(87,216,255,.10)),color-mix(in srgb,var(--dsw-specific-bubble) 86%,transparent));box-shadow:0 2px 12px rgba(0,0,0,.16)}',
+      '.Sixlwa_userStack [data-message-bubble][data-message-bubble]{border-radius:8px 8px 2px 8px;border-color:rgba(87,216,255,.42);background:linear-gradient(180deg,color-mix(in srgb,var(--dsw-specific-bubble) 72%,rgba(87,216,255,.26)),color-mix(in srgb,var(--dsw-specific-bubble) 78%,rgba(87,216,255,.14)));box-shadow:0 2px 14px rgba(2,10,20,.28),inset 0 0 18px rgba(56,189,248,.05)}',
       '.JObwrW_fill.JObwrW_fill{stroke:' + AZ + '}',
       '.JObwrW_track.JObwrW_track{stroke:rgba(87,216,255,.18)}',
       '.JObwrW_trigger.JObwrW_trigger{color:#8fa9c2}',
@@ -1035,9 +1196,9 @@ window.__ModuleLoader__.load({
         if (list.length === 0) return;
         const el = list[list.length - 1];
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('dsh-br-flash');
+        el.classList.add('dsh-br-jumpflash');
         setTimeout(() => {
-          try { el.classList.remove('dsh-br-flash'); } catch (err) {}
+          try { el.classList.remove('dsh-br-jumpflash'); } catch (err) {}
         }, 1700);
       } catch (err) {}
     }
@@ -1285,19 +1446,20 @@ window.__ModuleLoader__.load({
           // Failure ledger: scan the last 40 loaded nodes for real red signals —
           // turn-error notices, model-retry lifecycle, failed tool results.
           const errSig = pick(props.useChat, (s) => {
-            if (s == null || s.legacy == null || s.order == null || s.legacy.nodes == null) return '0|0|||';
-            const ord = s.order;
-            const store = s.legacy.nodes;
-            const from = Math.max(0, ord.length - 40);
+            // `legacy.nodes` is the compatibility ARRAY of durable ConversationNodes
+            // (turn-error / tool-result / model-retry), sorted by seq — not a store.
+            // Calling `.get(key)` on it threw, the catch swallowed it, and this
+            // whole ledger silently stayed at '0|0|||'.
+            if (s == null || s.legacy == null || s.legacy.nodes == null) return '0|0|||';
+            const nodes = s.legacy.nodes;
+            const from = Math.max(0, nodes.length - 40);
             let turnErr = 0;
             let toolErr = 0;
             let retry = '';
             let code = '';
             let msg = '';
-            for (let i = ord.length - 1; i >= from; i--) {
-              let raw = null;
-              try { raw = store.get(ord[i]); } catch (err) {}
-              const d = raw == null ? null : raw.kind != null ? raw : raw.data != null ? raw.data : null;
+            for (let i = nodes.length - 1; i >= from; i--) {
+              const d = nodes[i];
               if (d == null || typeof d.kind !== 'string') continue;
               if (d.kind === 'turn-error') {
                 if (turnErr === 0) {
@@ -1327,14 +1489,11 @@ window.__ModuleLoader__.load({
                 rows.push('L|' + (safe(call.name) || '?') + '|' + (Number(call.time) || 0) + '|0');
               }
             }
-            if (s.order != null && s.legacy.nodes != null) {
-              const ord = s.order;
-              const store = s.legacy.nodes;
-              const from = Math.max(0, ord.length - 30);
-              for (let i = ord.length - 1; i >= from; i--) {
-                let raw = null;
-                try { raw = store.get(ord[i]); } catch (err) {}
-                const d = raw == null ? null : raw.kind != null ? raw : raw.data != null ? raw.data : null;
+            const nodes = s.legacy.nodes;
+            if (nodes != null && nodes.length > 0) {
+              const from = Math.max(0, nodes.length - 30);
+              for (let i = nodes.length - 1; i >= from; i--) {
+                const d = nodes[i];
                 if (d == null || d.kind !== 'tool-result') continue;
                 const from_ = Number(d.callTime);
                 const dur = Number.isFinite(from_) && from_ > 0 ? Math.max(0, (Number(d.time) || 0) - from_) : -1;
@@ -1505,10 +1664,18 @@ window.__ModuleLoader__.load({
               const top = 92;
               const height = Math.max(140, window.innerHeight - top - 200);
               const rightEl = rightRef.current;
+              // Collapse is rail-less (0px) on macOS and a 56px rail elsewhere,
+              // so the measured track is the only honest source. `null` means the
+              // width could not be read at all — only then use a default.
+              const compactChrome =
+                typeof document !== 'undefined' &&
+                document.querySelector('[data-sidebar-collapsed],[data-sidebar-drawer]') != null;
+              const leftBase = sidebarPx == null ? (compactChrome ? 0 : 296) : sidebarPx;
               const targets = [
-                { el: leftRef.current, x: Math.round(sidebarPx == null ? 296 : sidebarPx) + 14 },
+                { el: leftRef.current, x: Math.round(leftBase) + 14 },
                 { el: rightEl, x: window.innerWidth - 16 - (rightEl == null ? 248 : rightEl.offsetWidth || 248) },
               ];
+              const visible = [];
               for (const item of targets) {
                 const el = item.el;
                 if (el == null) continue;
@@ -1519,8 +1686,23 @@ window.__ModuleLoader__.load({
                 el.style.right = 'auto';
                 el.style.height = height + 'px';
                 el.style.transform = 'none';
-                const rect = el.getBoundingClientRect();
-                el.style.transform =
+                visible.push(item);
+              }
+              // Drop secondary rows before the panels' own flex-shrink starts
+              // cutting bottom text. Thresholds are worst-case (fail row + four
+              // tool rows); content changes later cannot re-trigger a check, so
+              // they must already be safe at the current height.
+              const leftEl = leftRef.current;
+              if (leftEl != null) {
+                const compact = height < 340 ? '2' : height < 420 ? '1' : '';
+                if ((leftEl.getAttribute('data-compact') || '') !== compact) {
+                  if (compact === '') leftEl.removeAttribute('data-compact');
+                  else leftEl.setAttribute('data-compact', compact);
+                }
+              }
+              for (const item of visible) {
+                const rect = item.el.getBoundingClientRect();
+                item.el.style.transform =
                   'translate(' + Math.round(item.x - rect.left) + 'px,' + Math.round(top - rect.top) + 'px)';
               }
             };
@@ -1552,10 +1734,16 @@ window.__ModuleLoader__.load({
             if (frame == null) return undefined;
             const read = () => {
               const px = parseFloat((frame.style.gridTemplateColumns || '').split(' ')[0]);
-              // Only trust a plausible sidebar width. A stray 0 or a huge value
-              // would fling the left column over the conversation; fall back to
-              // the CSS default instead of believing it.
-              setSidebarPx(Number.isFinite(px) && px >= 120 && px <= 560 ? px : null);
+              // The collapsed track is 0 on macOS and the 56px rail elsewhere;
+              // both are real, so accept them. Rejecting 0/56 was why a collapse
+              // fell back to the expanded-width default and left AGENT/FLOW
+              // floating at x=296 instead of following the sidebar left.
+              const compactChrome =
+                typeof document !== 'undefined' &&
+                document.querySelector('[data-sidebar-collapsed],[data-sidebar-drawer]') != null;
+              const valid =
+                Number.isFinite(px) && px <= 560 && (px >= 40 || (px === 0 && compactChrome));
+              setSidebarPx(valid ? px : null);
             };
             read();
             const observer = new MutationObserver(read);
@@ -1621,6 +1809,10 @@ window.__ModuleLoader__.load({
           const ttftMeasured = meta.firstTextT != null ? (meta.firstTextT - meta.runStart) / 1000 : null;
           const ttftWaiting = meta.wasRun && meta.firstTextT == null ? (Date.now() - meta.runStart) / 1000 : null;
           const ltTotal = meta.thinkMs + meta.toolMs + meta.outMs;
+          const ltText =
+            t('ltThink') + (meta.thinkMs / 1000).toFixed(1) +
+            ' \u00B7 ' + t('ltTool') + (meta.toolMs / 1000).toFixed(1) +
+            ' \u00B7 ' + t('ltWrite') + (meta.outMs / 1000).toFixed(1);
           const liveTurnRow = ltTotal > 300 ? h(
             'div',
             { className: 'dsh-br-liveturn' },
@@ -1631,13 +1823,7 @@ window.__ModuleLoader__.load({
               h('i', { 'data-k': 'tool', style: { width: ((meta.toolMs / ltTotal) * 100).toFixed(1) + '%' } }),
               h('i', { 'data-k': 'write', style: { width: ((meta.outMs / ltTotal) * 100).toFixed(1) + '%' } }),
             ),
-            h(
-              'span',
-              { className: 'dsh-br-lttxt' },
-              t('ltThink') + (meta.thinkMs / 1000).toFixed(1) +
-              ' \u00B7 ' + t('ltTool') + (meta.toolMs / 1000).toFixed(1) +
-              ' \u00B7 ' + t('ltWrite') + (meta.outMs / 1000).toFixed(1),
-            ),
+            h('span', { className: 'dsh-br-lttxt', title: ltText }, ltText),
           ) : null;
 
           const failRow = errN > 0 || retryK !== '' ? h(
@@ -1711,7 +1897,7 @@ window.__ModuleLoader__.load({
               'div',
               { className: 'dsh-br-srow' },
               h('span', null, h('i', { className: 'dsh-br-key', 'data-k': 'llm' }), t('llm'), h('b', null, fmtS(llmMs))),
-              h('span', null, h('i', { className: 'dsh-br-key', 'data-k': 'tool' }), t('tool'), h('b', null, fmtS(toolMs))),
+              h('span', null, h('i', { className: 'dsh-br-key', 'data-k': 'tool' }), t('toolTime'), h('b', null, fmtS(toolMs))),
             ),
             h(
               'div',
@@ -1740,7 +1926,7 @@ window.__ModuleLoader__.load({
               h(
                 'span',
                 null,
-                t('out'),
+                t('outTok'),
                 h(
                   'b',
                   null,
@@ -1907,7 +2093,7 @@ window.__ModuleLoader__.load({
                 h('circle', { className: 'dsh-br-org-pupil', cx: 14, cy: 14, r: 1.5 }),
               ),
               h('span', { className: 'dsh-br-org-phase', 'data-p': curPhase }, t(curPhase)),
-              h('span', { className: 'dsh-br-org-metric' }, orgMetric),
+              h('span', { className: 'dsh-br-org-metric', title: orgMetric }, orgMetric),
             ),
             h(
               'div',
@@ -2090,7 +2276,7 @@ window.__ModuleLoader__.load({
             'div',
             { className: 'dsh-br-panel' },
             h('div', { className: 'dsh-br-panel-head' }, t('usage'), h('b', { className: 'dsh-br-headval' }, fmt(totalTokens))),
-            h(URow, { key: 'uo', name: t('out'), color: AZ, value: usage.outputTokens, max: Math.max(1, totalTokens) }),
+            h(URow, { key: 'uo', name: t('outTok'), color: AZ, value: usage.outputTokens, max: Math.max(1, totalTokens) }),
             h(URow, { key: 'ui', name: t('in'), color: '#6d8ba3', value: usage.uncachedInputTokens, max: Math.max(1, totalTokens) }),
             h(URow, { key: 'ur', name: t('read'), color: GREEN, value: usage.cacheReadTokens, max: Math.max(1, totalTokens) }),
             h(URow, { key: 'uw', name: t('write'), color: VIOLET, value: usage.cacheWriteTokens, max: Math.max(1, totalTokens) }),
@@ -2211,7 +2397,7 @@ window.__ModuleLoader__.load({
             h('span', null, t('tokens')),
             h('b', null, fmt(total)),
             h('i', { className: 'dsh-br-sep' }),
-            h('span', null, t('out')),
+            h('span', null, t('outTok')),
             h('b', null, fmt(usage.outputTokens)),
             hit == null
               ? null
@@ -2448,7 +2634,13 @@ window.__ModuleLoader__.load({
               try {
                 const url = bakeSkyURL();
                 if (url !== '') document.documentElement.style.setProperty('--dsh-sky', 'url("' + url + '")');
-              } catch (err) {}
+              } catch (err) {
+                // A failed bake silently loses the whole sky; say so once. The
+                // selfcheck gate treats this warning as a release-blocking failure.
+                try {
+                  console.warn('[dsh-cockpit] sky bake failed:', err);
+                } catch (_) {}
+              }
             }, 120);
           }
         } catch (err) {}
